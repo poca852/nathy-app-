@@ -10,8 +10,22 @@ const getPagos = async(req = request, res = response) => {
   const {cliente} = req.query;
 
   try {
-    // para obtener los pagos de cierte credito
-    const pagos = await PagoModel.find({cliente, ruta});
+
+    if(cliente){
+      // para obtener los pagos de cierte credito
+      const pagos = await PagoModel.find({cliente, ruta});
+      
+      return res.status(200).json({
+        ok: true,
+        pagos
+      })
+    }
+
+    let fecha = moment().format('DD/MM/YYYY');
+
+    const pagos = await PagoModel.find({fecha: new RegExp(fecha, 'i'), ruta})
+      .populate('credito', ['id', 'valor_credito', 'total_pagar', 'abonos', 'saldo', 'valor_cuota'])
+      .populate('cliente', ['id', 'alias', 'nombre'])
 
     res.status(200).json({
       ok: true,
