@@ -88,7 +88,7 @@ const getCajaAyer = async(ruta, fecha) => {
     base = 0
     return base;
   }else if(cajas.length > 1){
-    base = cajas[cajas.length - 2];
+    base = cajas[cajas.length - 1].caja_final;
     return base;
   }
 
