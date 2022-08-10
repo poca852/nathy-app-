@@ -2,7 +2,8 @@ const {Router} = require('express');
 const {check} = require('express-validator');
 const { getPagos, 
         postPagos,
-        getPago } = require('../controllers/pago');
+        getPago, 
+        updatePago} = require('../controllers/pago');
 const { validarCreditoById, validarClienteById, validarPago } = require('../helpers');
         
 const {validarJWT, validarCampos} = require('../middlewares/');
@@ -30,6 +31,12 @@ router.get('/:id', [
   validarCampos
 ], getPago)
 
-
+// actualizar el pago
+router.patch('/:idPago', [
+  validarJWT,
+  check('idPago', 'No es un id valido').isMongoId(),
+  check('idPago').custom(validarPago),
+  validarCampos
+], updatePago)
 
 module.exports = router;

@@ -113,13 +113,80 @@ const getPago = async(req = request, res = response) => {
 
   try {
 
-    const pago = await PagoModel.find({id, ruta});
+    const pago = await PagoModel.findById(id)
+      .populate('credito')
+      .populate('cliente');
 
-    res.status({
+    res.status(201).json({
       ok: true,
       pago
     })
     
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const updatePago = async(req = request, res = response) => {
+  try {
+    
+    const { idPago } = req.params;
+    const { ruta } = req.usuario;
+    const { valor } = req.body;
+    const fecha = moment().format('DD/MM/YYYY');
+
+    const getPago = await PagoModel.findById(idPago)
+      .populate('credito', ['id']);
+    const getRuta = await RutaModel.findById(ruta);
+    const getCredito = await CreditoModel.findById(getPago.credito.id)
+      .populate('cliente', 'id');
+
+    // actualizamos
+
+    // lo primero devolver todo a como estaba
+    getCredito.status = true; // devolvermos el estatus del credito a true
+    getCredito.saldo += getPago.valor; // devolvemos el saldo del credito a como estaba 
+    getCredito.abonos -= getPago.valor; // devolvemos los abonos como estaban
+    getRuta.total_cobrado -= getPago.valor; // devolvemos los abonos totales de la ruta
+    
+    // ahora volver a calcular
+    if(valor > getCredito.saldo){
+      // si entra aca es porque el valor es mayor al saldo del credito
+      return res.status(401).json({
+        ok: false,
+        msg: `El saldo del cliente es ${getCredito.saldo}`
+      })
+    }
+
+    await ClienteModel.findByIdAndUpdate(getCredito.cliente.id, {status: true}); // devolvemos el estatus al cliente por si al caso ya el pago anterior habia puesto su status en false
+
+    getPago.valor = valor; // se actualiza el valor del pago
+    getPago.fecha = fecha; // se actualiza la fecha del pago
+
+    getCredito.saldo -= valor; // se actualiza el saldo del credito
+    getCredito.abonos += valor; // se actualiza los abonos del credito
+    getRuta.total_cobrado += valor; // se actualiza los abonos totales de la ruta
+
+    if(getCredito.saldo === 0){
+      // si entra a esta condicion es porque ya el saldo quedo en 0 por lo tanto el estatus del credito debe pasar a false lo mismo con el status del cliente
+      getCredito.status = false;
+      await ClienteModel.findByIdAndUpdate(getCredito.cliente.id, {status: false});
+    };
+
+    // ya realizadas todas la operaciones guardamos los cambios realizados
+    await getCredito.save();
+    await getPago.save();
+    await getRuta.save();
+
+    res.status(200).json({
+      ok: true,
+      getPago
+    })
+
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -137,4 +204,5 @@ module.exports = {
   getPagos,
   postPagos,
   getPago,
+  updatePago
 }
