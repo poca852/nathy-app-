@@ -26,7 +26,9 @@ const getCaja = async(req = request, res = response) => {
     let clientes_pendientes = await getDataCaja(ruta, hoy, 'getClientesPendientes');
     let retiro = await getDataCaja(ruta, hoy, 'getRetiros');
     let caja_final = base + inversion + cobro - prestamo - gasto - retiro;
-    let efectividad = Math.round( (cobro * 100) / pretendido);
+
+    // esta informacion se puede imprimir desde el front
+    // let efectividad = Math.round( (cobro * 100) / pretendido);
 
     const data = {
       fecha, 
@@ -42,10 +44,9 @@ const getCaja = async(req = request, res = response) => {
       gasto, 
       retiro, 
       ruta,
-      efectividad
     }
 
-    if(caja.length === 0){
+    if(!caja){
       const nuevaCaja = await CajaModel.create(data);
       return res.json({
         ok: true,

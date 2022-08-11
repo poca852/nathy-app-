@@ -42,14 +42,9 @@ const CajaModel = new Schema({
     type: Number
   },
 
-  efectividad: {
-    type: Number
-  },
-
   pretendido: {
     type: Number
   },
-
 
   ruta: {
     type: Schema.Types.ObjectId,
