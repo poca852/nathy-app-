@@ -12,8 +12,6 @@ const getCaja = async(req = request, res = response) => {
   try {
     // verificar si ya existe una caja con la fecha dada
     const caja = await CajaModel.findOne({fecha: hoy, ruta});
-
-    
     // me traigo todas las cajas para poder sacar la ultima caja
   
     let base = await getCajaAyer(ruta, hoy);
@@ -47,7 +45,7 @@ const getCaja = async(req = request, res = response) => {
       efectividad
     }
 
-    if(!caja){
+    if(caja.length === 0){
       const nuevaCaja = await CajaModel.create(data);
       return res.json({
         ok: true,
