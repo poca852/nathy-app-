@@ -1,6 +1,6 @@
 const {Router} = require('express');
 const {check} = require('express-validator');
-const { postRuta, getRuta, patchRuta, closeRuta, openRuta } = require('../controllers/ruta');
+const { postRuta, getRuta, patchRuta, closeRuta, openRuta, getRutas } = require('../controllers/ruta');
 
 // helpers
 const { validarUsuarioById, validarRutaByName, validarRutaById } = require('../helpers/db-validators');
@@ -18,6 +18,10 @@ router.post('/', [
   check('nombre').custom(validarRutaByName),
   validarCampos
 ], postRuta);
+
+router.get('/', [
+  validarJWT,
+], getRutas)
 
 router.get('/:idRuta', [
   validarJWT,
