@@ -4,10 +4,14 @@ const {RutaModel, UsuarioModel, CreditoModel} = require('../models');
 const postRuta = async (req = request, res = response) => {
 
   const { nombre, ciudad } = req.body;
+  const { id } = req.usuario;
 
   try {
 
     const ruta = await RutaModel.create({nombre, ciudad});
+    const usuario = await UsuarioModel.findById(id);
+    usuario.rutas.unshift(ruta);
+    await usuario.save();
 
     res.status(201).json({
       ok: true,
@@ -16,6 +20,42 @@ const postRuta = async (req = request, res = response) => {
 
   } catch (error) {
     console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const getRutas = async(req = request, res = response) => {
+  try{
+
+    const {all = false} = req.query;
+
+    if(all) {
+      const rutas = await RutaModel.find();
+
+      return res.status(200).json({
+        ok: true,
+        rutas
+      })
+    } 
+
+    const { rutas } = req.usuario;
+    let arrRutas = [];
+
+    for (let i = 0; i < rutas.length; i++) {
+      let rutaModel = await RutaModel.findById(rutas[i])
+      arrRutas.push(rutaModel)
+    }
+
+    res.status(200).json({
+      ok: true,
+      rutas: arrRutas
+    })
+
+  }catch(err){
+    console.log(err)
     res.status(500).json({
       ok: false,
       msg: 'Hable con el administrador'
@@ -129,5 +169,6 @@ module.exports = {
   getRuta,
   patchRuta,
   closeRuta,
-  openRuta
+  openRuta,
+  getRutas
 }
