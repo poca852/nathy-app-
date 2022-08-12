@@ -52,6 +52,14 @@ const RutaModel = new Schema({
   status: {
     type: Boolean,
     default: true
+  },
+
+  ultimo_cierre: {
+    type: String
+  },
+
+  ultima_apertura: {
+    type: String
   }
 
 });
