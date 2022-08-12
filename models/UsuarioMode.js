@@ -33,7 +33,14 @@ const UsuarioModel = new Schema({
   ruta: {
     type: Schema.Types.ObjectId,
     ref: 'RutaModel'
-  }
+  },
+
+  rutas: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'RutaModel'
+    }
+  ]
 });
 
 UsuarioModel.methods.toJSON = function(){
