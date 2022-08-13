@@ -1,5 +1,7 @@
 const { request, response } = require("express");
 const {RutaModel, UsuarioModel, CreditoModel} = require('../models');
+const moment = require('moment-timezone');
+moment.tz.setDefault('America/Guatemala');
 
 const postRuta = async (req = request, res = response) => {
 
@@ -126,9 +128,14 @@ const closeRuta = async(req = request, res = response) => {
 
   const {idRuta} = req.params;
 
+  const query = {
+    status: false,
+    ultimo_cierre: moment().format('DD/MM/YYYY hh:mm a')
+  }
+
   try {
 
-    await RutaModel.findByIdAndUpdate(idRuta, {status: false}, {new: true});
+    await RutaModel.findByIdAndUpdate(idRuta, query, {new: true});
 
     res.status(200).json({
       ok: true
@@ -147,9 +154,14 @@ const openRuta = async(req = request, res = response) => {
 
   const {idRuta} = req.params;
 
+  const query = {
+    status: true,
+    ultima_apertura: moment().format('DD/MM/YYYY hh:mm a')
+  }
+
   try {
 
-    await RutaModel.findByIdAndUpdate(idRuta, {status: true}, {new: true});
+    await RutaModel.findByIdAndUpdate(idRuta, query, {new: true});
 
     res.status(200).json({
       ok: true
