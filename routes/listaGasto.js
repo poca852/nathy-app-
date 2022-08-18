@@ -18,8 +18,8 @@ const { addGasto,
 const router = Router();
 
 router.post('/', [
-  validarJWT,
-  esSuperAdmin,
+  //validarJWT,
+  //esSuperAdmin,
   check('gasto').not().isEmpty(),
   check('gasto').custom(validarGastoByName),
   validarCampos

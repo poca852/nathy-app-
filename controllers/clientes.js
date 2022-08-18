@@ -35,14 +35,6 @@ const getCliente = async(req = request, res = response) => {
   try {
 
     let cliente = await ClienteModel.findById(id);
-    const rutaModel = await RutaModel.findById(ruta);
-
-    if(!rutaModel.clientes.includes(id)){
-      return res.status(401).json({
-        ok: false,
-        msg: 'No tienes permitido ver otros clientes'
-      })
-    }
 
     res.status(200).json({
       ok: true,
