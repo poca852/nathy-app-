@@ -7,8 +7,7 @@ moment.tz.setDefault('America/Guatemala');
 const getCaja = async(req = request, res = response) => {
 
   const { ruta } = req.usuario;
-  // const hoy = moment().format('DD/MM/YYYY');
-  const hoy = '29/08/2022';
+  const hoy = moment().format('DD/MM/YYYY');
 
   try {
     // verificar si ya existe una caja con la fecha dada
