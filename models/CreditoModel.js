@@ -66,6 +66,10 @@ const CreditoModel = new Schema({
   ultimo_pago: {
     type: String,
     default: ''
+  },
+
+  notas: {
+    type: String
   }
 });
 
