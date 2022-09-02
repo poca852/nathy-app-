@@ -106,7 +106,24 @@ const renew = async (req = request, res = response) => {
   }
 }
 
+// admin login
+const adminLogin = async(req = request, res = response) => {
+  try {
+    
+    const { username, password } = req.body;
+
+
+
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 module.exports = {
   login,
-  renew
+  renew,
+  adminLogin
 }
