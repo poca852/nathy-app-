@@ -6,12 +6,11 @@ const { generarJWT } = require("../helpers");
 const login = async (req = request, res = response) => {
 
   const { username, password } = req.body;
-  const { admin = false } = req.query;
 
   try {
 
     // validamos que el usuario exista en la base de datos
-    const user = await UsuarioModel.findOne({ username: username })
+    const user = await UsuarioModel.findOne({ username })
       .populate('rol', 'rol')
 
     if (!user) {
@@ -34,39 +33,14 @@ const login = async (req = request, res = response) => {
     if (!validacionPassowrd) {
       return res.status(401).json({
         ok: false,
-        msg: 'Verifica los datos'
-      })
-    }
-
-    // una vez verificados los demas puntos verificamos que el usuario sea admin
-    if(admin){
-      if(user.rol.rol === 'SUPER_ADMIN' || user.rol.rol === 'ADMIN'){
-        const token = await generarJWT(user.id);
-  
-        return res.status(200).json({
-          ok: true,
-          user,
-          token
-        })
-      }
-
-      return res.status(403).json({
-        ok: false,
-        msg: 'Usted no es Administrador'
-      })
-      
-    }
-
-    // validamos que el usuario tenga una ruta asignada
-    const rutaModel = await RutaModel.findById(user.ruta);
-    if(!rutaModel){
-      return res.status(403).json({
-        ok: false,
-        msg: 'Usted no tiene una ruta asignada hable con su administrador'
+        msg: 'Verifica sus datos'
       })
     }
 
     // validamos que la ruta se encuentre abierta, si la ruta esta cerrada le enviamos un mensaje al cobrador diciendo que la ruta se encuentra cerrada
+
+    const rutaModel = await RutaModel.findById(user.ruta)
+
     if(!rutaModel.status){
       return res.status(403).json({
         ok: false,
