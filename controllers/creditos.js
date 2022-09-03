@@ -8,7 +8,7 @@ const postCredito = async (req = request, res = response) => {
 
   const { idCliente } = req.params;
   const { ruta } = req.usuario;
-  const { valor_credito, interes, total_cuotas } = req.body;
+  const { valor_credito, interes, total_cuotas, notas } = req.body;
 
   try {
 
@@ -20,7 +20,8 @@ const postCredito = async (req = request, res = response) => {
       ...data,
       fecha_inicio: moment().format('DD/MM/YYYY'),
       ruta, 
-      cliente: idCliente
+      cliente: idCliente,
+      notas
     });
 
     // actualizamos el status del cliente, y actualizaos el arreglo de creditos del cliente
