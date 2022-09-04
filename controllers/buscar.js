@@ -19,7 +19,7 @@ const buscarCreditosByName = async(termino = '', req = request, res = response) 
     .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
     .populate('pagos', ['fecha', 'valor'])
 
-  const creditos = allCreditos.filter(c => c.cliente.nombre.includes(termino.toUpperCase()));
+  const creditos = allCreditos.filter(c => c.cliente.alias.includes(termino.toUpperCase()));
 
   if(termino === 'all'){
     return res.status(200).json({
