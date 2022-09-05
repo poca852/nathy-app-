@@ -45,9 +45,18 @@ const getRutas = async(req = request, res = response) => {
 
     const { rutas } = req.usuario;
     let arrRutas = [];
-
+    let creditos = [];
     for (let i = 0; i < rutas.length; i++) {
       let rutaModel = await RutaModel.findById(rutas[i])
+      let creditos = await CreditoModel.find({ruta: rutas[i], status: true})
+      let cartera = 0;
+
+      creditos.forEach(credito => {
+        cartera += credito.saldo 
+      })
+
+      rutaModel.cartera = cartera
+      await rutaModel.save()
       arrRutas.push(rutaModel)
     }
 

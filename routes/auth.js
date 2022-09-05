@@ -1,6 +1,6 @@
 const {Router} = require('express');
 const {check} = require('express-validator');
-const { login, renew, adminLogin } = require('../controllers/auth');
+const { login, renew, adminLogin, renewAdmin } = require('../controllers/auth');
 
 const { validarCampos, validarJWT } = require('../middlewares')
 
@@ -22,5 +22,10 @@ router.get('/revalidar', [
   validarJWT,
   validarCampos
 ], renew)
+
+router.get('/revalidar/admin', [
+  validarJWT,
+  validarCampos
+], renewAdmin)
 
 module.exports = router;
