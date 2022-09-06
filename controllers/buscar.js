@@ -1,19 +1,21 @@
 const { request, response } = require('express');
 const { ObjectId } = require('mongoose').Types;
-const { CreditoModel, UsuarioModel, ClienteModel } = require('../models')
+const { CreditoModel, UsuarioModel, ClienteModel, PagoModel } = require('../models')
+const moment = require('moment');
+moment.tz.setDefault('America/Guatemala');
 
 const coleccionesPermitidas = [
   'usuarios',
   'caja',
   'clientes',
   'creditos',
-  'gastos'
+  'gastos',
+  'pagos'
 ];
 
 
 const buscarCreditosByName = async(termino = '', req = request, res = response) => {
   const {ruta} = req.usuario;
-  console.log(termino)
 
   const allCreditos = await CreditoModel.find({ruta, status: true})
     .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
@@ -35,6 +37,30 @@ const buscarCreditosByName = async(termino = '', req = request, res = response) 
 
 }
 
+const buscarClienteEnPagos = async(termino = '', req = request, res = response) => {
+  const { ruta } = req.usuario;
+
+  const hoy = moment().format('DD/MM/YYYY')
+
+  const allPagos = await PagoModel.find({ruta, fecha: new RegExp(hoy, 'i')})
+    .populate('cliente')
+
+  const pagos = allPagos.filter( p => p.cliente.alias.includes(termino.toUpperCase()))
+
+  if(termino === 'all'){
+    return res.status(200).json({
+      ok: true,
+      pagos: allPagos
+    })
+  }
+
+  res.status(200).json({
+    ok: true,
+    pagos
+  })
+
+}
+
 const buscar = (req, res = response) => {
   const {coleccion, termino = ''} = req.params;
   if(!coleccionesPermitidas.includes(coleccion)){
@@ -46,6 +72,10 @@ const buscar = (req, res = response) => {
   switch (coleccion) {
     case 'creditos':
       buscarCreditosByName(termino, req, res)
+      break;
+
+    case 'pagos': 
+      buscarClienteEnPagos(termino, req, res)
       break;
   
     default:
