@@ -60,6 +60,11 @@ const RutaModel = new Schema({
 
   ultima_apertura: {
     type: String
+  },
+
+  ingresar_gastos_cobrador: {
+    type: Boolean,
+    default: true
   }
 
 });

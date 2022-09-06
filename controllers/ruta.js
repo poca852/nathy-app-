@@ -5,15 +5,12 @@ moment.tz.setDefault('America/Guatemala');
 
 const postRuta = async (req = request, res = response) => {
 
-  const { nombre, ciudad } = req.body;
+  const { nombre, ciudad, ingresar_gastos_cobrador } = req.body;
   const { id } = req.usuario;
 
   try {
 
-    const ruta = await RutaModel.create({nombre, ciudad});
-    const usuario = await UsuarioModel.findById(id);
-    usuario.rutas.unshift(ruta);
-    await usuario.save();
+    const ruta = await RutaModel.create({nombre, ciudad, ingresar_gastos_cobrador});
 
     res.status(201).json({
       ok: true,
