@@ -12,7 +12,8 @@ const validarJWT = async( req, res, next ) => {
         const { uid } = jwt.verify( token, process.env.SECRETORPRIVATEKEY );
         // leer el usuario que corresponde al uid
         const usuario = await UsuarioModel.findById( uid )
-            .populate('rol', 'rol')
+            .populate('rol')
+            .populate('ruta')
         
         if( !usuario ) {
             return res.status( 401 ).json({

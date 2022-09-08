@@ -11,7 +11,8 @@ const getCaja = async(req = request, res = response) => {
 
   try {
     // verificar si ya existe una caja con la fecha dada
-    const caja = await CajaModel.findOne({fecha: hoy, ruta});
+    const caja = await CajaModel.findOne({fecha: hoy, ruta})
+      .populate('ruta')
     // me traigo todas las cajas para poder sacar la ultima caja
   
     let base = await getCajaAyer(ruta, hoy);
@@ -47,14 +48,18 @@ const getCaja = async(req = request, res = response) => {
     }
 
     if(!caja){
-      const nuevaCaja = await CajaModel.create(data);
+      const nuevaCaja = await CajaModel.create(data)
+      const mostrarCaja = await CajaModel.findById(nuevaCaja.id)
+        .populate('ruta')
+        
       return res.json({
         ok: true,
-        caja: nuevaCaja
+        caja: mostrarCaja
       })
     }
 
     const cajaActual = await CajaModel.findByIdAndUpdate(caja.id, data, {new: true})
+      .populate('ruta')
 
     res.status(200).json({
       ok: true,

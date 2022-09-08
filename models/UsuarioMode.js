@@ -5,7 +5,8 @@ const UsuarioModel = new Schema({
   nombre: {
     type: String,
     required: true,
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
 
   estado: {
