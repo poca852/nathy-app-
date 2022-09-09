@@ -13,6 +13,11 @@ const RutaModel = new Schema({
     default: 0
   },
 
+  clientes_activos: {
+    type: Number,
+    default: 0
+  },
+
   gastos: {
     type: Number,
     default: 0
@@ -51,7 +56,7 @@ const RutaModel = new Schema({
 
   status: {
     type: Boolean,
-    default: true
+    default: false
   },
 
   ultimo_cierre: {
@@ -65,7 +70,14 @@ const RutaModel = new Schema({
   ingresar_gastos_cobrador: {
     type: Boolean,
     default: true
-  }
+  },
+
+  cajas: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'CajaModel'
+    }
+  ]
 
 });
 

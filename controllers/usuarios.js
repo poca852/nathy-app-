@@ -1,6 +1,6 @@
 const { request, response } = require("express");
 const bcryptjs = require('bcryptjs');
-const UsuarioModel = require("../models/UsuarioMode");
+const { UsuarioModel, RolModel } = require("../models");
 
 const postUsuarios = async(req=request, res=response) => {
   
@@ -8,16 +8,16 @@ const postUsuarios = async(req=request, res=response) => {
   const {username, password, nombre, rol} = req.body;
  
   try {
-    
+
     const usuario = new UsuarioModel({username, password, nombre, rol});
 
     // encriptar la contraseña
     const salt = bcryptjs.genSaltSync();
     usuario.password = bcryptjs.hashSync(password, salt);
-
+    
     // guardamos el usuario
     await usuario.save();
-
+    
     res.status(201).json({
       ok: true,
       usuario
@@ -38,7 +38,9 @@ const getUsuarios = async(req = request, res = response) => {
   try {
 
     const usuarios = await UsuarioModel.find({estado})
-      .populate('ruta', ['nombre', 'ciudad']);
+      .populate('ruta', ['nombre', 'ciudad'])
+      .populate('rol');
+
     res.json({
       ok: true,
       usuarios

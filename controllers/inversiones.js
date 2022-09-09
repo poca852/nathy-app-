@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const {InversionModel, RutaModel} = require('../models');
+const {InversionModel, RutaModel, CajaModel} = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 
@@ -7,18 +7,29 @@ const postInversion = async(req = request, res = response) => {
 
   const {ruta} = req.usuario;
   const body = req.body;
+  const hoy = moment().format('DD/MM/YYYY');
 
   try {
     
     const inversion = await InversionModel.create({
       ...body,
-      fecha: moment().format('DD/MM/YYYY'),
+      fecha: hoy,
       ruta
     });
 
     const rutaModel = await RutaModel.findById(ruta);
     rutaModel.inversiones += body.valor;
     await rutaModel.save();
+
+    // actualizamos la caja
+    const cajaActual = await CajaModel.findOne({
+      ruta: rutaModel.id,
+      fecha: new RegExp(hoy, 'i')
+    })
+
+    cajaActual.inversion += body.valor;
+    cajaActual.caja_final += body.valor;
+    await cajaActual.save()
 
     res.status(201).json({
       ok: true,

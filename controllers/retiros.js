@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const {RetiroModel, RutaModel} = require('../models');
+const {RetiroModel, RutaModel, CajaModel} = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 
@@ -7,17 +7,28 @@ const postRetiro = async (req = request, res = response) => {
 
   const {ruta} = req.usuario;
   const body = req.body;
+  const hoy = moment().format('DD/MM/YYYY');
 
   try {
 
     const retiro = await RetiroModel.create({
       ...body, 
-      fecha: moment().format('DD/MM/YYYY'), 
+      fecha: hoy, 
       ruta});
 
     const rutaModel = await RutaModel.findById(ruta);
     rutaModel.retiros += body.valor;
     await rutaModel.save();
+
+    // actualizamos la caja
+    const cajaActual = await CajaModel.findOne({
+      fecha: new RegExp(hoy, 'i'),
+      ruta: rutaModel.id
+    })
+
+    cajaActual.retiro += body.valor;
+    cajaActual.caja_final -= body.valor;
+    await cajaActual.save();
 
     res.status(201).json({
       ok: true,

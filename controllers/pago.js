@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { CreditoModel, ClienteModel, PagoModel, RutaModel } = require('../models');
+const { CreditoModel, ClienteModel, PagoModel, RutaModel, CajaModel } = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 
@@ -57,7 +57,7 @@ const getPagos = async (req = request, res = response) => {
 const postPagos = async (req = request, res = response) => {
 
   const { ruta } = req.usuario;
-  const { valor } = req.body;
+  const { valor, fecha } = req.body;
   const { idCredito } = req.params;
 
   try {
@@ -77,7 +77,7 @@ const postPagos = async (req = request, res = response) => {
     // contrario si no es mayor entonces procesamos el pago
     const newPago = await PagoModel.create({
       valor,
-      fecha: moment().format('DD/MM/YYYY hh:mm a'),
+      fecha,
       ruta,
       credito: idCredito,
       cliente: creditoModel.cliente.id
@@ -85,7 +85,7 @@ const postPagos = async (req = request, res = response) => {
 
     // se agrega el pago al arreglo de pagos que tiene el credito y aparte de eso se hacen las operaciones en los campos de saldo y abonos
     creditoModel.pagos.unshift(newPago);
-    creditoModel.ultimo_pago = moment().format('DD/MM/YYYY');
+    creditoModel.ultimo_pago = fecha;
     creditoModel.abonos += valor;
     creditoModel.saldo -= valor;
 
@@ -102,6 +102,18 @@ const postPagos = async (req = request, res = response) => {
     const rutaModel = await RutaModel.findById(ruta);
     rutaModel.total_cobrado += valor;
     await rutaModel.save();
+
+    // actualizar la caja
+    const cajaActual = await CajaModel.findOne({
+      ruta: rutaModel.id, 
+      fecha: new RegExp(fecha, 'i')
+    });
+
+    cajaActual.cobro += valor;
+    cajaActual.caja_final += valor;
+    cajaActual.clientes_pendientes -= 1;
+
+    await cajaActual.save()
 
     res.status(201).json({
       ok: true,
@@ -148,14 +160,15 @@ const updatePago = async (req = request, res = response) => {
 
     const { idPago } = req.params;
     const { ruta } = req.usuario;
-    const { valor } = req.body;
-    const fecha = moment().format('DD/MM/YYYY');
+    const { valor, fecha } = req.body;
 
     const getPago = await PagoModel.findById(idPago)
       .populate('credito', ['id']);
     const getRuta = await RutaModel.findById(ruta);
     const getCredito = await CreditoModel.findById(getPago.credito.id)
       .populate('cliente', 'id');
+
+    const cajaActual = await CajaModel.findOne({ruta, fecha: new RegExp(fecha, 'i')});
 
     // actualizamos
 
@@ -164,6 +177,9 @@ const updatePago = async (req = request, res = response) => {
     getCredito.saldo += getPago.valor; // devolvemos el saldo del credito a como estaba 
     getCredito.abonos -= getPago.valor; // devolvemos los abonos como estaban
     getRuta.total_cobrado -= getPago.valor; // devolvemos los abonos totales de la ruta
+
+    cajaActual.cobro -= getPago.valor; // devolvemos el cobro de la caja a su estado normal
+    cajaActual.caja_final -= getPago.valor; // devolvemos la caja final a su estado normal
 
     // ahora volver a calcular
     if (valor > getCredito.saldo) {
@@ -183,6 +199,9 @@ const updatePago = async (req = request, res = response) => {
     getCredito.abonos += valor; // se actualiza los abonos del credito
     getRuta.total_cobrado += valor; // se actualiza los abonos totales de la ruta
 
+    cajaActual.cobro += valor;
+    cajaActual.caja_final += valor;
+
     if (getCredito.saldo === 0) {
       // si entra a esta condicion es porque ya el saldo quedo en 0 por lo tanto el estatus del credito debe pasar a false lo mismo con el status del cliente
       getCredito.status = false;
@@ -193,6 +212,7 @@ const updatePago = async (req = request, res = response) => {
     await getCredito.save();
     await getPago.save();
     await getRuta.save();
+    await cajaActual.save();
 
     res.status(200).json({
       ok: true,

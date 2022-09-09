@@ -1,54 +1,79 @@
 const {Schema, model} = require('mongoose');
+const moment = require('moment-timezone');
+moment.tz.setDefault('America/Guatemala');
 
 const CajaModel = new Schema({
 
   fecha: {
     type: String,
-    required: true
+    required: true,
   },
 
   base: {
-    type: Number
+    type: Number,
+    required: true
   },
 
   inversion: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
 
   retiro: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
 
   gasto: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
 
   cobro: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
+
   prestamo: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
+
   total_clientes: {
-    type: Number
+    type: Number,
+    required: true,
   },
+
   clientes_pendientes: {
-    type: Number
+    type: Number,
+    required: true,
   },
+
   renovaciones: {
-    type: Number
+    type: Number,
+    required: true,
+    default: 0
   },
+
   caja_final: {
-    type: Number
+    type: Number,
+    required: true,
   },
 
   pretendido: {
-    type: Number
+    type: Number,
+    required: true,
   },
 
   ruta: {
     type: Schema.Types.ObjectId,
-    ref: 'RutaModel'
+    ref: 'RutaModel',
+    required: true
   },
 });
 

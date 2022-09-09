@@ -1,16 +1,15 @@
 const { request, response } = require("express");
-const {RutaModel, UsuarioModel, CreditoModel} = require('../models');
+const { RutaModel, UsuarioModel, CreditoModel, CajaModel } = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 
 const postRuta = async (req = request, res = response) => {
 
-  const { nombre, ciudad, ingresar_gastos_cobrador } = req.body;
-  const { id } = req.usuario;
+  const { nombre, ciudad, ingresar_gastos_cobrador = true } = req.body;
 
   try {
 
-    const ruta = await RutaModel.create({nombre, ciudad, ingresar_gastos_cobrador});
+    const ruta = await RutaModel.create({ nombre, ciudad, ingresar_gastos_cobrador });
 
     res.status(201).json({
       ok: true,
@@ -26,30 +25,30 @@ const postRuta = async (req = request, res = response) => {
   }
 }
 
-const getRutas = async(req = request, res = response) => {
-  try{
+const getRutas = async (req = request, res = response) => {
+  try {
 
-    const {all = false} = req.query;
+    const { all = false } = req.query;
 
-    if(all) {
+    if (all) {
       const rutas = await RutaModel.find();
 
       return res.status(200).json({
         ok: true,
         rutas
       })
-    } 
+    }
 
     const { rutas } = req.usuario;
     let arrRutas = [];
     let creditos = [];
     for (let i = 0; i < rutas.length; i++) {
       let rutaModel = await RutaModel.findById(rutas[i])
-      let creditos = await CreditoModel.find({ruta: rutas[i], status: true})
+      let creditos = await CreditoModel.find({ ruta: rutas[i], status: true })
       let cartera = 0;
 
       creditos.forEach(credito => {
-        cartera += credito.saldo 
+        cartera += credito.saldo
       })
 
       rutaModel.cartera = cartera
@@ -62,7 +61,7 @@ const getRutas = async(req = request, res = response) => {
       rutas: arrRutas
     })
 
-  }catch(err){
+  } catch (err) {
     console.log(err)
     res.status(500).json({
       ok: false,
@@ -73,12 +72,12 @@ const getRutas = async(req = request, res = response) => {
 
 const getRuta = async (req = request, res = response) => {
 
-  const {idRuta} = req.params;
+  const { idRuta } = req.params;
 
   try {
 
     const ruta = await RutaModel.findById(idRuta);
-    const creditos = await CreditoModel.find({ruta, status: true});
+    const creditos = await CreditoModel.find({ ruta, status: true });
     let cartera = 0;
     creditos.forEach(credito => {
       cartera += credito.saldo;
@@ -101,17 +100,17 @@ const getRuta = async (req = request, res = response) => {
   }
 }
 
-const patchRuta = async(req = request, res = response) => {
+const patchRuta = async (req = request, res = response) => {
 
-  const {idRuta, idCobrador} = req.params;
+  const { idRuta, idCobrador } = req.params;
 
   try {
 
     // se actualiza la ruta del cobrador
     const empleado = await UsuarioModel.findByIdAndUpdate(
-      idCobrador, 
-      {ruta: idRuta}, 
-      {new: true}
+      idCobrador,
+      { ruta: idRuta },
+      { new: true }
     );
 
 
@@ -120,7 +119,7 @@ const patchRuta = async(req = request, res = response) => {
       empleado
     })
 
-    
+
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -130,23 +129,31 @@ const patchRuta = async(req = request, res = response) => {
   }
 }
 
-const closeRuta = async(req = request, res = response) => {
-
-  const {idRuta} = req.params;
-
-  const query = {
-    status: false,
-    ultimo_cierre: moment().format('DD/MM/YYYY hh:mm a')
-  }
-
+const closeRuta = async (req = request, res = response) => {
   try {
 
-    await RutaModel.findByIdAndUpdate(idRuta, query, {new: true});
+    const { idRuta } = req.params;
+
+    const query = {
+      status: false,
+      ultimo_cierre: moment().format('DD/MM/YYYY hh:mm a')
+    }
+
+    const ultimaCaja = await CajaModel.findOne({
+      ruta: idRuta,
+      fecha: new RegExp(moment().format('DD/MM/YYYY'), 'i')
+    })
+
+    const rutaACerrar = await RutaModel.findByIdAndUpdate(idRuta, query, { new: true });
+
+    rutaACerrar.cajas.unshift(ultimaCaja)
+
+    await rutaACerrar.save()
 
     res.status(200).json({
       ok: true
     })
-    
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -156,23 +163,63 @@ const closeRuta = async(req = request, res = response) => {
   }
 }
 
-const openRuta = async(req = request, res = response) => {
-
-  const {idRuta} = req.params;
-
-  const query = {
-    status: true,
-    ultima_apertura: moment().format('DD/MM/YYYY hh:mm a')
-  }
-
+const openRuta = async (req = request, res = response) => {
   try {
+    const { idRuta } = req.params;
+    // const hoy = moment().format('DD/MM/YYYY');
+    const hoy = '10/09/2022';
 
-    await RutaModel.findByIdAndUpdate(idRuta, query, {new: true});
+    const ruta = await RutaModel.findByIdAndUpdate(idRuta, {
+      status: true,
+      ultima_apertura: hoy
+    }, { new: true })
+      .populate('cajas')
+
+    // ===== CREAMOS UNA CAJA ======= \\
+    console.log(ruta)
+    const [creditosActivos, total_clientes] = await Promise.all([
+      CreditoModel.find({ ruta: idRuta, status: true }),
+      CreditoModel.countDocuments({ ruta: idRuta, status: true })
+    ])
+    
+    let pretendido = 0;
+    creditosActivos.forEach(credito => {
+      pretendido += credito.valor_cuota
+    })
+
+    let bodyCaja; // ESTE ES EL OBJETO QUE GUARDAREMOS EN LA NUEVA CAJA
+
+    // Validamos que hayan cajas previas antes de crear la nueva caja 
+    if(ruta.cajas.length === 0){
+      bodyCaja = {
+        base: 0,
+        caja_final: 0,
+        total_clientes,
+        clientes_pendientes: total_clientes,
+        pretendido,
+        ruta: idRuta,
+        fecha: hoy
+      }
+    }else{
+      bodyCaja = {
+        base: ruta.cajas[0].caja_final,
+        caja_final: ruta.cajas[0].caja_final,
+        total_clientes,
+        clientes_pendientes: total_clientes,
+        pretendido,
+        ruta: idRuta,
+        fecha: hoy
+      }
+    }
+
+
+    const caja = new CajaModel(bodyCaja);
+    await caja.save();
 
     res.status(200).json({
       ok: true
     })
-    
+
   } catch (error) {
     console.log(error);
     res.status(500).json({

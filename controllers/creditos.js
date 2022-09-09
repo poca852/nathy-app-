@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { CreditoModel, ClienteModel, RutaModel } = require('../models');
+const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
 const { generarCredito } = require("../helpers/creditos");
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
@@ -9,6 +9,7 @@ const postCredito = async (req = request, res = response) => {
   const { idCliente } = req.params;
   const { ruta } = req.usuario;
   const { valor_credito, interes, total_cuotas, notas } = req.body;
+  const hoy = moment().format('DD/MM/YYYY');
 
   try {
 
@@ -18,7 +19,7 @@ const postCredito = async (req = request, res = response) => {
     // creamos el credito
     const credito = await CreditoModel.create({
       ...data,
-      fecha_inicio: moment().format('DD/MM/YYYY'),
+      fecha_inicio: hoy,
       ruta, 
       cliente: idCliente,
       notas
@@ -29,10 +30,22 @@ const postCredito = async (req = request, res = response) => {
     clienteModel.creditos.unshift(credito)
     await clienteModel.save();
 
-    // actualizamos el camp total_prestado de la ruta
+    // actualizamos el camp total_prestado e incrementamos la cartera de la ruta
     const rutaModel = await RutaModel.findById(ruta);
     rutaModel.total_prestado += valor_credito;
+    rutaModel.cartera += data.total_pagar;
     await rutaModel.save();
+
+    // actualizamos la caja
+    const cajaActual = await CajaModel.findOne({
+      fecha: new RegExp(hoy, 'i'),
+      ruta: rutaModel.id
+    })
+
+    cajaActual.prestamo += valor_credito;
+    cajaActual.caja_final -= valor_credito;
+    cajaActual.renovaciones += 1;
+    await cajaActual.save();
 
 
     res.status(201).json({
