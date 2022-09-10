@@ -1,6 +1,4 @@
 const {Schema, model} = require('mongoose');
-const moment = require('moment-timezone');
-moment.tz.setDefault('America/Guatemala');
 
 const CajaModel = new Schema({
 
