@@ -29,6 +29,13 @@ const login = async (req = request, res = response) => {
       })
     }
 
+    if(user.rol.rol !== 'COBRADOR'){
+      return res.status(400).json({
+        ok: false,
+        msg: `Acceso denegado, usted no es cobrador`
+      })
+    }
+
     // validamos los passwords
     const validacionPassowrd = bcryptjs.compareSync(password, user.password);
     if (!validacionPassowrd) {
@@ -45,7 +52,7 @@ const login = async (req = request, res = response) => {
     if(!rutaModel.status){
       return res.status(403).json({
         ok: false,
-        msg: 'La ruta se encuentra cerrada'
+        msg: 'Ruta cerrada, hable con su administrador'
       })
     }
 
