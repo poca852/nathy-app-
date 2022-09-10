@@ -133,22 +133,18 @@ const closeRuta = async (req = request, res = response) => {
   try {
 
     const { idRuta } = req.params;
+    const { fecha } = req.body;
 
-    const query = {
-      status: false,
-      ultimo_cierre: moment().format('DD/MM/YYYY hh:mm a')
-    }
+    const ruta = await RutaModel.findById(idRuta);
+    const caja = await CajaModel.findOne({ruta: idRuta, fecha});
 
-    const ultimaCaja = await CajaModel.findOne({
-      ruta: idRuta,
-      fecha: new RegExp(moment().format('DD/MM/YYYY'), 'i')
-    })
+    // cerramos la ruta
+    ruta.status = false;
+    ruta.ultimo_cierre = fecha;
+    ruta.ultima_caja = caja.id;
+    ruta.cajas.unshift(caja)
 
-    const rutaACerrar = await RutaModel.findByIdAndUpdate(idRuta, query, { new: true });
-
-    rutaACerrar.cajas.unshift(ultimaCaja)
-
-    await rutaACerrar.save()
+    await ruta.save()
 
     res.status(200).json({
       ok: true
@@ -166,17 +162,11 @@ const closeRuta = async (req = request, res = response) => {
 const openRuta = async (req = request, res = response) => {
   try {
     const { idRuta } = req.params;
-    // const hoy = moment().format('DD/MM/YYYY');
-    const hoy = '10/09/2022';
+    const { fecha } = req.body;
 
-    const ruta = await RutaModel.findByIdAndUpdate(idRuta, {
-      status: true,
-      ultima_apertura: hoy
-    }, { new: true })
-      .populate('cajas')
+    const ruta = await RutaModel.findById(idRuta)
 
     // ===== CREAMOS UNA CAJA ======= \\
-    console.log(ruta)
     const [creditosActivos, total_clientes] = await Promise.all([
       CreditoModel.find({ ruta: idRuta, status: true }),
       CreditoModel.countDocuments({ ruta: idRuta, status: true })
@@ -190,17 +180,12 @@ const openRuta = async (req = request, res = response) => {
     let bodyCaja; // ESTE ES EL OBJETO QUE GUARDAREMOS EN LA NUEVA CAJA
 
     // Validamos que hayan cajas previas antes de crear la nueva caja 
-    if(ruta.cajas.length === 0){
+    if(!ruta.ultima_caja && ruta.cajas.length === 0){
       bodyCaja = {
-        base: 0,
-        caja_final: 0,
-        total_clientes,
-        clientes_pendientes: total_clientes,
-        pretendido,
         ruta: idRuta,
-        fecha: hoy
+        fecha
       }
-    }else{
+    }else if(!ruta.ultima_caja && ruta.cajas.length > 0){
       bodyCaja = {
         base: ruta.cajas[0].caja_final,
         caja_final: ruta.cajas[0].caja_final,
@@ -208,13 +193,30 @@ const openRuta = async (req = request, res = response) => {
         clientes_pendientes: total_clientes,
         pretendido,
         ruta: idRuta,
-        fecha: hoy
+        fecha
+      }
+    }else{
+      bodyCaja = {
+        base: ruta.ultima_caja.caja_final,
+        caja_final: ruta.ultima_caja.caja_final,
+        total_clientes,
+        clientes_pendientes: total_clientes,
+        pretendido,
+        ruta: idRuta,
+        fecha
       }
     }
 
 
-    const caja = new CajaModel(bodyCaja);
+    const caja = await CajaModel.create(bodyCaja);
     await caja.save();
+
+    ruta.caja_actual = caja.id;
+    ruta.status = true;
+    ruta.ultima_apertura = fecha;
+    ruta.clientes_activos = total_clientes
+    await ruta.save();
+    
 
     res.status(200).json({
       ok: true

@@ -11,7 +11,8 @@ const CajaModel = new Schema({
 
   base: {
     type: Number,
-    required: true
+    required: true,
+    default: 0
   },
 
   inversion: {
@@ -47,11 +48,13 @@ const CajaModel = new Schema({
   total_clientes: {
     type: Number,
     required: true,
+    default: 0
   },
 
   clientes_pendientes: {
     type: Number,
     required: true,
+    default: 0
   },
 
   renovaciones: {
@@ -63,11 +66,13 @@ const CajaModel = new Schema({
   caja_final: {
     type: Number,
     required: true,
+    default: 0
   },
 
   pretendido: {
     type: Number,
     required: true,
+    default: 0
   },
 
   ruta: {

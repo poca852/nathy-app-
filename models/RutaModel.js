@@ -77,7 +77,19 @@ const RutaModel = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'CajaModel'
     }
-  ]
+  ],
+
+  // la caja actual hace referencia a la caja vigente
+  caja_actual: {
+    type: Schema.Types.ObjectId,
+    ref: 'CajaModel'
+  },
+
+  // esta caja hace referencia a la caja  del dia anterior
+  ultima_caja: {
+    type: Schema.Types.ObjectId,
+    ref: 'CajaModel'
+  },
 
 });
 

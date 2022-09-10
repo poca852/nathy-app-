@@ -26,7 +26,6 @@ router.get('/', [
 router.post('/', [
   validarJWT,
   check('dpi', 'El dpi es obligatorio').not().isEmpty(),
-  check('dpi').custom(validarDpi),
   check('alias', 'El alias es obligatorio').not().isEmpty(),
   check('telefono', 'El dpi es obligatorio').not().isEmpty(),
   check('nombre', 'El nombre es obligatorio').not().isEmpty().isLength({min: 4}),

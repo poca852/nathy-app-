@@ -7,13 +7,11 @@ const postInversion = async(req = request, res = response) => {
 
   const {ruta} = req.usuario;
   const body = req.body;
-  const hoy = moment().format('DD/MM/YYYY');
 
   try {
     
     const inversion = await InversionModel.create({
       ...body,
-      fecha: hoy,
       ruta
     });
 
@@ -22,10 +20,7 @@ const postInversion = async(req = request, res = response) => {
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findOne({
-      ruta: rutaModel.id,
-      fecha: new RegExp(hoy, 'i')
-    })
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
 
     cajaActual.inversion += body.valor;
     cajaActual.caja_final += body.valor;

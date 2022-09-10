@@ -61,7 +61,6 @@ const postPagos = async (req = request, res = response) => {
   const { idCredito } = req.params;
 
   try {
-
     const creditoModel = await CreditoModel.findById(idCredito)
       .populate('cliente', 'id')
 
@@ -104,10 +103,7 @@ const postPagos = async (req = request, res = response) => {
     await rutaModel.save();
 
     // actualizar la caja
-    const cajaActual = await CajaModel.findOne({
-      ruta: rutaModel.id, 
-      fecha: new RegExp(fecha, 'i')
-    });
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id);
 
     cajaActual.cobro += valor;
     cajaActual.caja_final += valor;
@@ -168,7 +164,7 @@ const updatePago = async (req = request, res = response) => {
     const getCredito = await CreditoModel.findById(getPago.credito.id)
       .populate('cliente', 'id');
 
-    const cajaActual = await CajaModel.findOne({ruta, fecha: new RegExp(fecha, 'i')});
+    const cajaActual = await CajaModel.findById(getRuta.caja_actual._id);
 
     // actualizamos
 
@@ -181,6 +177,8 @@ const updatePago = async (req = request, res = response) => {
     cajaActual.cobro -= getPago.valor; // devolvemos el cobro de la caja a su estado normal
     cajaActual.caja_final -= getPago.valor; // devolvemos la caja final a su estado normal
 
+    await ClienteModel.findByIdAndUpdate(getCredito.cliente.id, { status: true }); // devolvemos el estatus al cliente por si al caso ya el pago anterior habia puesto su status en false
+    
     // ahora volver a calcular
     if (valor > getCredito.saldo) {
       // si entra aca es porque el valor es mayor al saldo del credito
@@ -190,7 +188,6 @@ const updatePago = async (req = request, res = response) => {
       })
     }
 
-    await ClienteModel.findByIdAndUpdate(getCredito.cliente.id, { status: true }); // devolvemos el estatus al cliente por si al caso ya el pago anterior habia puesto su status en false
 
     getPago.valor = valor; // se actualiza el valor del pago
     getPago.fecha = fecha; // se actualiza la fecha del pago

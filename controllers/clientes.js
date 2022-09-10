@@ -54,8 +54,17 @@ const postCliente = async(req = request, res = response) => {
   const {ruta} = req.usuario;
   const {nombre, dpi, ciudad, direccion, alias, telefono} = req.body;
   try {
+
+    // verifico que el dpi ya existe en dicha ruta
+    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ruta, dpi});
+    if(verificarSiExisteClienteEnRuta){
+      return res.status(400).json({
+        ok: false,
+        msg: `El cliente ${verificarSiExisteClienteEnRuta.nombre} ya existe en esta ruta`
+      })
+    }
     
-    const cliente = await ClienteModel.create({
+    const nuevoCliente = await ClienteModel.create({
       nombre,
       dpi,
       ciudad,
@@ -72,7 +81,7 @@ const postCliente = async(req = request, res = response) => {
 
     res.status(201).json({
       ok: true,
-      cliente
+      cliente: nuevoCliente
     })
 
   } catch (error) {

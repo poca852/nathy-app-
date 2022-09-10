@@ -45,14 +45,13 @@ const getGasto = async (req = request, res = response) => {
 const postGastos = async (req = request, res = response) => {
 
   const { ruta } = req.usuario;
-  const { valor, gasto, nota } = req.body;
-  const hoy = moment().format('DD/MM/YYYY');
+  const { valor, gasto, nota, fecha } = req.body;
 
   try {
 
     const nuevoGasto = await GastoModel.create({
       gasto,
-      fecha: hoy,
+      fecha,
       valor,
       nota,
       ruta
@@ -64,10 +63,7 @@ const postGastos = async (req = request, res = response) => {
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findOne({
-      fecha: new RegExp(hoy, 'i'),
-      ruta
-    })
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
 
     cajaActual.gasto += valor;
     cajaActual.caja_final -= valor;

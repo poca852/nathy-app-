@@ -7,24 +7,20 @@ const postRetiro = async (req = request, res = response) => {
 
   const {ruta} = req.usuario;
   const body = req.body;
-  const hoy = moment().format('DD/MM/YYYY');
 
   try {
 
     const retiro = await RetiroModel.create({
       ...body, 
-      fecha: hoy, 
-      ruta});
+      ruta
+    });
 
     const rutaModel = await RutaModel.findById(ruta);
     rutaModel.retiros += body.valor;
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findOne({
-      fecha: new RegExp(hoy, 'i'),
-      ruta: rutaModel.id
-    })
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
 
     cajaActual.retiro += body.valor;
     cajaActual.caja_final -= body.valor;

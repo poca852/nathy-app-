@@ -8,8 +8,8 @@ const postCredito = async (req = request, res = response) => {
 
   const { idCliente } = req.params;
   const { ruta } = req.usuario;
-  const { valor_credito, interes, total_cuotas, notas } = req.body;
-  const hoy = moment().format('DD/MM/YYYY');
+  const { valor_credito, interes, total_cuotas, notas, fecha } = req.body;
+  // const hoy = moment().format('DD/MM/YYYY');
 
   try {
 
@@ -19,7 +19,7 @@ const postCredito = async (req = request, res = response) => {
     // creamos el credito
     const credito = await CreditoModel.create({
       ...data,
-      fecha_inicio: hoy,
+      fecha_inicio: fecha,
       ruta, 
       cliente: idCliente,
       notas
@@ -37,10 +37,7 @@ const postCredito = async (req = request, res = response) => {
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findOne({
-      fecha: new RegExp(hoy, 'i'),
-      ruta: rutaModel.id
-    })
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
 
     cajaActual.prestamo += valor_credito;
     cajaActual.caja_final -= valor_credito;
