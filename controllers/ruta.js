@@ -165,6 +165,8 @@ const openRuta = async (req = request, res = response) => {
     const { fecha } = req.body;
 
     const ruta = await RutaModel.findById(idRuta)
+      .populate('ultima_caja')
+      .populate('cajas')
 
     // ===== CREAMOS UNA CAJA ======= \\
     const [creditosActivos, total_clientes] = await Promise.all([
@@ -180,22 +182,7 @@ const openRuta = async (req = request, res = response) => {
     let bodyCaja; // ESTE ES EL OBJETO QUE GUARDAREMOS EN LA NUEVA CAJA
 
     // Validamos que hayan cajas previas antes de crear la nueva caja 
-    if(!ruta.ultima_caja && ruta.cajas.length === 0){
-      bodyCaja = {
-        ruta: idRuta,
-        fecha
-      }
-    }else if(!ruta.ultima_caja && ruta.cajas.length > 0){
-      bodyCaja = {
-        base: ruta.cajas[0].caja_final,
-        caja_final: ruta.cajas[0].caja_final,
-        total_clientes,
-        clientes_pendientes: total_clientes,
-        pretendido,
-        ruta: idRuta,
-        fecha
-      }
-    }else{
+    if(ruta.ultima_caja){
       bodyCaja = {
         base: ruta.ultima_caja.caja_final,
         caja_final: ruta.ultima_caja.caja_final,
@@ -204,6 +191,13 @@ const openRuta = async (req = request, res = response) => {
         pretendido,
         ruta: idRuta,
         fecha
+      }
+    }
+    
+    if(!ruta.ultima_caja && ruta.cajas.length === 0){
+      bodyCaja = {
+        fecha,
+        ruta: idRuta
       }
     }
 
