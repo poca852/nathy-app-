@@ -2,11 +2,13 @@ const {Schema, model} = require('mongoose');
 
 const ClienteModel = new Schema({
 
+  // STATUS SE REFIERE A QUE SI TIENE UN CREDITO ACTIVO
   status: {
     type: Boolean,
     default: false
   },
   
+  // STATE SE REFIERE SI EL CLIENTE A SIDO BLOQUEADO  
   state: {
     type: Boolean,
     default: true
@@ -14,40 +16,47 @@ const ClienteModel = new Schema({
 
   dpi: {
     type: String,
-    required: [true, 'El dpi es obligatorio']
+    required: [true, 'El dpi es obligatorio'],
+    trim: true
   },
 
   nombre: {
     type: String,
     required: [true, 'El nombre es obligatorio'],
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
 
   alias: {
     type: String,
     required: [true, 'El alias es obligatorio'],
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
 
   ciudad: {
     type: String,
     required: [true, 'La ciudad es obligatorio'],
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
 
   direccion: {
     type: String,
     required: [true, 'La direccion es obligatoria'],
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
 
   telefono: {
     type: String,
-    required: [true, 'El telefono es obligatorio']
+    required: [true, 'El telefono es obligatorio'],
+    trim: true
   },
 
   img: {
-    type: String
+    type: String,
+    trim: true
   },
 
   ruta: {
@@ -55,6 +64,7 @@ const ClienteModel = new Schema({
     ref: 'RutaModel'
   },
 
+  // CREDITOS SE REFIERE AL HISTORIAL DE LOS CREDITOS
   creditos: [
     {
       type: Schema.Types.ObjectId,
