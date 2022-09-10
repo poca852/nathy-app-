@@ -140,7 +140,8 @@ const adminLogin = async(req = request, res = response) => {
     const { username, password } = req.body;
 
     const user = await UsuarioModel.findOne({username})
-      .populate('rol' , 'rol')
+      .populate('rol')
+      .populate('rutas')
 
     if(!user){
       return res.status(404).json({
