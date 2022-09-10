@@ -15,7 +15,8 @@ const postInversion = async(req = request, res = response) => {
       ruta
     });
 
-    const rutaModel = await RutaModel.findById(ruta);
+    const rutaModel = await RutaModel.findById(ruta)
+      .populate('caja_actual');
     rutaModel.inversiones += body.valor;
     await rutaModel.save();
 
