@@ -16,12 +16,11 @@ const postInversion = async(req = request, res = response) => {
     });
 
     const rutaModel = await RutaModel.findById(ruta)
-      .populate('caja_actual');
     rutaModel.inversiones += body.valor;
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
+    const cajaActual = await CajaModel.findById(rutaModel.caja_actual)
 
     cajaActual.inversion += body.valor;
     cajaActual.caja_final += body.valor;

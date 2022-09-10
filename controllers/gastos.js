@@ -58,7 +58,8 @@ const postGastos = async (req = request, res = response) => {
     });
 
     // actualizamos la ruta
-    const rutaModel = await RutaModel.findById(ruta);
+    const rutaModel = await RutaModel.findById(ruta)
+      .populate('caja_actual')
     rutaModel.gastos += valor;
     await rutaModel.save();
 
