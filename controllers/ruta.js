@@ -231,11 +231,38 @@ const openRuta = async (req = request, res = response) => {
   }
 }
 
+const addRutaAdmin = async(req = request, res = response) => {
+  try {
+    const {idAdmin, idRuta} = req.params;
+
+    const [user, ruta] = await Promise.all([
+      UsuarioModel.findById(idAdmin),
+      RutaModel.findById(idRuta)
+    ])
+
+    user.rutas.push(idRuta);
+    await user.save();
+
+    res.status(200).json({
+      ok: true,
+      msg: `El Administrador ${user.nombre} ahora administra la ruta ${ruta.nombre}`
+    })
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 module.exports = {
   postRuta,
   getRuta,
   patchRuta,
   closeRuta,
   openRuta,
-  getRutas
+  getRutas,
+  addRutaAdmin
 }
