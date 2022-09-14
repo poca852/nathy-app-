@@ -1,13 +1,25 @@
 const {Router} = require('express');
 const {check} = require('express-validator');
-const { postRuta, getRuta, patchRuta, closeRuta, openRuta, getRutas, addRutaAdmin } = require('../controllers/ruta');
+
+// controladores de ruta
+const { getRutaById, 
+        actualizarRuta, 
+        closeRuta, 
+        openRuta, 
+        getRutas, 
+        addRutaAdmin, 
+        addRuta, 
+        addEmpleado} = require('../controllers/ruta');
 
 // helpers
-const { validarUsuarioById, validarRutaByName, validarRutaById } = require('../helpers/db-validators');
+const { validarUsuarioById, 
+        validarRutaByName, 
+        validarRutaById } = require('../helpers/db-validators');
 
 // middlewares
-const {validarJWT, validarCampos} = require('../middlewares/');
-const { esSuperAdmin } = require('../middlewares/validar-roles');
+const { validarJWT, 
+        validarCampos, 
+        esSuperAdmin} = require('../middlewares/');
 
 const router = Router();
 
@@ -17,7 +29,7 @@ router.post('/', [
   check('nombre', 'No es un numbre valido').isLength({min: 4}),
   check('nombre').custom(validarRutaByName),
   validarCampos
-], postRuta);
+], addRuta);
 
 router.get('/', [
   validarJWT,
@@ -28,17 +40,24 @@ router.get('/:idRuta', [
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
   validarCampos
-], getRuta);
+], getRutaById);
 
-router.patch('/add-employee/:idRuta/:idCobrador', [
+router.put('/:idRuta', [
   validarJWT,
   esSuperAdmin,
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
-  check('idCobrador', 'No es un id valido').isMongoId(),
-  check('idCobrador').custom(validarUsuarioById),
   validarCampos
-], patchRuta); 
+], actualizarRuta); 
+
+router.put('/add-empleado/:idRuta', [
+  validarJWT,
+  esSuperAdmin,
+  check('idRuta', 'No es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
+  check('empleado').custom(validarUsuarioById),
+  validarCampos
+], addEmpleado); 
 
 router.patch('/close/:idRuta', [
   validarJWT,

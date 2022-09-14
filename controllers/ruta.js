@@ -1,17 +1,27 @@
 const { request, response } = require("express");
-const { RutaModel, UsuarioModel, CreditoModel, CajaModel } = require('../models');
-const moment = require('moment-timezone');
-moment.tz.setDefault('America/Guatemala');
 
-const postRuta = async (req = request, res = response) => {
+// models
+const { RutaModel,
+  UsuarioModel,
+  CreditoModel,
+  CajaModel } = require('../models');
 
-  const { nombre, ciudad, ingresar_gastos_cobrador = true } = req.body;
+
+const addRuta = async (req = request, res = response) => {
 
   try {
+    const { nombre,
+      ciudad,
+      ingresar_gastos_cobrador } = req.body;
 
-    const ruta = await RutaModel.create({ nombre, ciudad, ingresar_gastos_cobrador });
 
-    res.status(201).json({
+    const ruta = await RutaModel.create({
+      nombre,
+      ciudad,
+      ingresar_gastos_cobrador
+    });
+
+    return res.status(201).json({
       ok: true,
       ruta
     })
@@ -28,38 +38,57 @@ const postRuta = async (req = request, res = response) => {
 const getRutas = async (req = request, res = response) => {
   try {
 
-    const { all = false } = req.query;
+    const { limite = 5, desde = 0, estado } = req.query;
+    let estadoRuta;
 
-    if (all) {
-      const rutas = await RutaModel.find();
-
-      return res.status(200).json({
-        ok: true,
-        rutas
-      })
+    if (estado.toLowerCase() === 'true') {
+      estadoRuta = true;
     }
 
-    const { rutas } = req.usuario;
-    let arrRutas = [];
-    let creditos = [];
-    for (let i = 0; i < rutas.length; i++) {
-      let rutaModel = await RutaModel.findById(rutas[i])
-      let creditos = await CreditoModel.find({ ruta: rutas[i], status: true })
-      let cartera = 0;
-
-      creditos.forEach(credito => {
-        cartera += credito.saldo
-      })
-
-      rutaModel.cartera = cartera
-      await rutaModel.save()
-      arrRutas.push(rutaModel)
+    if (estado.toLowerCase() === 'false') {
+      estadoRuta = false;
     }
 
-    res.status(200).json({
+    const [total, rutas] = await Promise.all([
+      RutaModel.countDocuments({ estado: estadoRuta }),
+      RutaModel.find({ estado: estadoRuta })
+        .skip(Number(desde))
+        .limit(Number(limite))
+    ])
+
+    return res.status(200).json({
       ok: true,
-      rutas: arrRutas
+      total,
+      rutas
     })
+
+    // const { all = false } = req.query;
+
+    // if (all) {
+    //   const rutas = await RutaModel.find();
+
+    //   return res.status(200).json({
+    //     ok: true,
+    //     rutas
+    //   })
+    // }
+
+    // const { rutas } = req.usuario;
+    // let arrRutas = [];
+    // let creditos = [];
+    // for (let i = 0; i < rutas.length; i++) {
+    //   let rutaModel = await RutaModel.findById(rutas[i])
+    //   let creditos = await CreditoModel.find({ ruta: rutas[i], status: true })
+    //   let cartera = 0;
+
+    //   creditos.forEach(credito => {
+    //     cartera += credito.saldo
+    //   })
+
+    //   rutaModel.cartera = cartera
+    //   await rutaModel.save()
+    //   arrRutas.push(rutaModel)
+    // }
 
   } catch (err) {
     console.log(err)
@@ -70,14 +99,15 @@ const getRutas = async (req = request, res = response) => {
   }
 }
 
-const getRuta = async (req = request, res = response) => {
-
-  const { idRuta } = req.params;
-
+const getRutaById = async (req = request, res = response) => {
   try {
+    const { idRuta } = req.params;
 
-    const ruta = await RutaModel.findById(idRuta);
-    const creditos = await CreditoModel.find({ ruta, status: true });
+    const [ruta, creditos] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CreditoModel.findOne({ruta: idRuta, status: true})
+    ])
+
     let cartera = 0;
     creditos.forEach(credito => {
       cartera += credito.saldo;
@@ -100,23 +130,17 @@ const getRuta = async (req = request, res = response) => {
   }
 }
 
-const patchRuta = async (req = request, res = response) => {
-
-  const { idRuta, idCobrador } = req.params;
-
+const actualizarRuta = async (req = request, res = response) => {
   try {
 
-    // se actualiza la ruta del cobrador
-    const empleado = await UsuarioModel.findByIdAndUpdate(
-      idCobrador,
-      { ruta: idRuta },
-      { new: true }
-    );
+    const { idRuta } = req.params;
+    const { _id, estado, status, ...resto } = req.body;
 
+    const resultado = await RutaModel.findByIdAndUpdate(idRuta, resto, { new: true });
 
     res.status(200).json({
       ok: true,
-      empleado
+      ruta: resultado
     })
 
 
@@ -129,20 +153,43 @@ const patchRuta = async (req = request, res = response) => {
   }
 }
 
+const addEmpleado = async(req = request, res = response) => {
+  try{
+
+    const { idRuta } = req.params;
+    const { empleado } = req.body;
+
+    const usuario = await UsuarioModel.findByIdAndUpdate(empleado, {ruta: idRuta}, {new: true});
+    
+    return res.status(201).json({
+      ok: true,
+      usuario
+    })
+
+  }catch(err){
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 const closeRuta = async (req = request, res = response) => {
   try {
 
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const ruta = await RutaModel.findById(idRuta);
-    const caja = await CajaModel.findOne({ruta: idRuta, fecha});
+    const [ruta, caja] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ruta: idRuta, fecha})
+    ])
 
     // cerramos la ruta
     ruta.status = false;
     ruta.ultimo_cierre = fecha;
     ruta.ultima_caja = caja.id;
-    ruta.cajas.unshift(caja)
 
     await ruta.save()
 
@@ -164,16 +211,15 @@ const openRuta = async (req = request, res = response) => {
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const ruta = await RutaModel.findById(idRuta)
-      .populate('ultima_caja')
-      .populate('cajas')
-
     // ===== CREAMOS UNA CAJA ======= \\
-    const [creditosActivos, total_clientes] = await Promise.all([
+    const [creditosActivos, total_clientes, ruta, cajas] = await Promise.all([
       CreditoModel.find({ ruta: idRuta, status: true }),
-      CreditoModel.countDocuments({ ruta: idRuta, status: true })
+      CreditoModel.countDocuments({ ruta: idRuta, status: true }),
+      RutaModel.findById(idRuta)
+        .populate('ultima_caja'),
+      CajaModel.find({ruta: idRuta})
     ])
-    
+
     let pretendido = 0;
     creditosActivos.forEach(credito => {
       pretendido += credito.valor_cuota
@@ -182,7 +228,7 @@ const openRuta = async (req = request, res = response) => {
     let bodyCaja; // ESTE ES EL OBJETO QUE GUARDAREMOS EN LA NUEVA CAJA
 
     // Validamos que hayan cajas previas antes de crear la nueva caja 
-    if(ruta.ultima_caja){
+    if (ruta.ultima_caja) {
       bodyCaja = {
         base: ruta.ultima_caja.caja_final,
         caja_final: ruta.ultima_caja.caja_final,
@@ -193,24 +239,37 @@ const openRuta = async (req = request, res = response) => {
         fecha
       }
     }
-    
-    if(!ruta.ultima_caja && ruta.cajas.length === 0){
+
+    // este caso deria cuando la ruta es nueva y no han generado ninguna caja
+    if(cajas.length === 0){
       bodyCaja = {
         fecha,
         ruta: idRuta
       }
     }
 
+    // este caso seria para los que ya tienen cajas guardadas pero con el formato antiguo
+    if(cajas.length >= 1){
+      bodyCaja = {
+        base: cajas[cajas.length - 1].caja_final,
+        caja_final: cajas[cajas.length - 1].caja_final,
+        total_clientes,
+        clientes_pendientes: total_clientes,
+        pretendido,
+        ruta: idRuta,
+        fecha
+      }
+    }
+
 
     const caja = await CajaModel.create(bodyCaja);
-    await caja.save();
 
     ruta.caja_actual = caja.id;
     ruta.status = true;
     ruta.ultima_apertura = fecha;
     ruta.clientes_activos = total_clientes
     await ruta.save();
-    
+
 
     res.status(200).json({
       ok: true
@@ -225,12 +284,13 @@ const openRuta = async (req = request, res = response) => {
   }
 }
 
-const addRutaAdmin = async(req = request, res = response) => {
+const addRutaAdmin = async (req = request, res = response) => {
   try {
-    const {idAdmin, idRuta} = req.params;
+    const { idRuta } = req.params;
+    const { usuario } = req.body
 
     const [user, ruta] = await Promise.all([
-      UsuarioModel.findById(idAdmin),
+      UsuarioModel.findById(usuario),
       RutaModel.findById(idRuta)
     ])
 
@@ -252,11 +312,12 @@ const addRutaAdmin = async(req = request, res = response) => {
 }
 
 module.exports = {
-  postRuta,
-  getRuta,
-  patchRuta,
+  addRuta,
+  getRutaById,
+  actualizarRuta,
   closeRuta,
   openRuta,
   getRutas,
-  addRutaAdmin
+  addRutaAdmin,
+  addEmpleado
 }
