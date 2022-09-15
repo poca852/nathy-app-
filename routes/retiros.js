@@ -1,19 +1,52 @@
 const {Router} = require('express');
 const {check} = require('express-validator');
-const { getRetiros, postRetiro } = require('../controllers/retiros');
 
-const {validarJWT, validarCampos} = require('../middlewares/');
+const { getRetiros, 
+        addRetiro, 
+        getRetiroById,
+        actualizarRetiro,
+        eliminarRetiro } = require('../controllers/retiros');
+
+const { validarExisteRetiroById, validarRutaById } = require('../helpers/db-validators');
+
+const { validarJWT, 
+        validarCampos } = require('../middlewares/');
 
 const router = Router();
 
-router.get('/', [
-  validarJWT,
-], getRetiros);
 
 router.post('/', [
   validarJWT,
   check('valor', 'no es un valor permitido').isNumeric(),
   validarCampos
-], postRetiro);
+], addRetiro);
+
+router.get('/:idRuta', [
+  validarJWT,
+  check('idRuta', 'No es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
+  validarCampos
+], getRetiros);
+
+router.get('/:idRetiro', [
+  validarJWT,
+  check('idRetiro', 'No es un id valido').isMongoId(),
+  check('idRetiro').custom(validarExisteRetiroById),
+  validarCampos
+], getRetiroById);
+
+router.put('/:idRetiro', [
+  validarJWT,
+  check('idRetiro', 'No es un id valido').isMongoId(),
+  check('idRetiro').custom(validarExisteRetiroById),
+  validarCampos
+], actualizarRetiro);
+
+router.delete('/:idRetiro', [
+  validarJWT,
+  check('idRetiro', 'No es un id valido').isMongoId(),
+  check('idRetiro').custom(validarExisteRetiroById),
+  validarCampos
+], eliminarRetiro);
 
 module.exports = router;

@@ -1,32 +1,37 @@
 const { request, response } = require("express");
-const {RetiroModel, RutaModel, CajaModel} = require('../models');
-const moment = require('moment-timezone');
-moment.tz.setDefault('America/Guatemala');
 
-const postRetiro = async (req = request, res = response) => {
+const { RetiroModel, 
+        RutaModel, 
+        CajaModel } = require('../models');
 
-  const {ruta} = req.usuario;
-  const body = req.body;
+const addRetiro = async (req = request, res = response) => {
 
   try {
 
+  const { fecha,
+          valor,
+          nota,
+          ruta } = req.body;
+
     const retiro = await RetiroModel.create({
-      ...body, 
+      fecha,
+      valor,
+      nota, 
       ruta
     });
 
-    const rutaModel = await RutaModel.findById(ruta);
-    rutaModel.retiros += body.valor;
+    const [rutaModel, cajaActual] = await Promise.all([
+      RutaModel.findById(ruta),
+      CajaModel.findOne({ruta, fecha})
+    ])
+
+    rutaModel.retiros += valor;
+    cajaActual.retiro += valor;
+    cajaActual.caja_final -= valor;
     await rutaModel.save();
-
-    // actualizamos la caja
-    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
-
-    cajaActual.retiro += body.valor;
-    cajaActual.caja_final -= body.valor;
     await cajaActual.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       retiro
     })
@@ -44,13 +49,13 @@ const postRetiro = async (req = request, res = response) => {
 
 const getRetiros = async (req = request, res = response) => {
 
-  const {ruta} = req.usuario;
-
   try {
+    
+    const { idRuta } = req.params;
     
     const retiros = await RetiroModel.find({ruta});
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       retiros
     })
@@ -64,7 +69,118 @@ const getRetiros = async (req = request, res = response) => {
   }
 }
 
+
+const getRetiroById = async (req  = request, res = response) => {
+  try{
+
+    const { idRetiro } = req.params;
+
+    const retiro = await RetiroModel.findById(idRetiro);
+
+    return res.status(200).json({
+      ok: true,
+      retiro
+    })
+
+  }catch(err){
+    conosle.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'hable con el administrador'
+    })
+  }
+}
+const actualizarRetiro = async (req = request, res = response) => {
+  try{
+
+    const { idRetiro } = req.params;
+    const {_id, ruta, fecha, valor, nota} = req.body;
+
+    if(nota && !valor){
+      const nuevoRetiro = await RetiroModel.findByIdAndUpdate(idRetiro, {fecha, nota}, {new: true});
+      return res.status(201).json({
+        ok: true,
+        retiro: nuevoRetiro
+      })
+    }
+
+    const [rutaModel, retiroModel, cajaActual] = await Promise.all([
+      RutaModel.findById(ruta),
+      RetiroModel.findById(idRetiro),
+      CajaModel.findOne({ruta, fecha})
+    ])
+
+    // regresar todo como estaba
+    rutaModel.retiros -= retiroModel.valor;
+    cajaActual.retiro -= retiroModel.valor;
+    cajaActual.caja_final += retiroModel.valor;
+
+    // actualizamos el retiro
+    const retiroUpdated = await RetiroModel.findByIdAndUpdate(idRetiro, {
+      fecha,
+      nota,
+      valor
+    }, {new: true});
+
+    rutaModel.retiros += valor;
+    cajaActual.retiro += valor;
+    cajaActual.caja_final -= valor;
+
+    // guardamos los cambios
+    await rutaModel.save()
+    await cajaActual.save()
+
+    return res.status(200).json({
+      ok: true,
+      retiro: retiroUpdated
+    })
+ 
+  }catch(err){
+    conosle.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'hable con el administrador'
+    })
+  }
+}
+const eliminarRetiro = async (req = request, res = response) => {
+  try{
+
+    const { idRetiro } = req.params;
+    const { ruta, fecha } = req.body;
+
+    const [rutaModel, retiroModel, cajaActual] = await Promise.all([
+      RutaModel.findById(ruta),
+      RetiroModel.findById(idRetiro),
+      CajaModel.findOne({ruta, fecha})
+    ])
+
+    // regresar todo como estaba
+    rutaModel.retiros -= retiroModel.valor;
+    cajaActual.retiro -= retiroModel.valor;
+    cajaActual.caja_final += retiroModel.valor;
+
+    // actualizamos el retiro
+    await RetiroModel.findByIdAndDelete(idRetiro);
+
+    return res.status(200).json({
+      ok: true,
+      msg: 'Retiro eliminado correctamente'
+    })
+
+  }catch(err){
+    conosle.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'hable con el administrador'
+    })
+  }
+}
+
 module.exports = {
-  postRetiro,
-  getRetiros
+  addRetiro,
+  getRetiros,
+  getRetiroById,
+  actualizarRetiro,
+  eliminarRetiro
 }

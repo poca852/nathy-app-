@@ -4,6 +4,7 @@ const { UsuarioModel,
         CreditoModel, 
         RolModel,
         PagoModel,
+        RetiroModel,
         Gasto, 
         InversionModel} = require('../models');
 
@@ -106,6 +107,14 @@ const validarExisteInversionById = async(idInversion = '') => {
   }
 }
 
+// validaciones para los retiros
+const validarExisteRetiroById = async(idRetiro = '') => {
+  const validacion = await RetiroModel.findById(idRetiro);
+  if(!validacion){
+    throw new Error(`No existe un retiro con id ${idRetiro}`)
+  }
+}
+
 module.exports = {
   validarUsuarioById,
   validarUsuarioByUsername,
@@ -119,5 +128,6 @@ module.exports = {
   validarPago,
   validarGastoByName,
   validarGastoById,
-  validarExisteInversionById
+  validarExisteInversionById,
+  validarExisteRetiroById
 }
