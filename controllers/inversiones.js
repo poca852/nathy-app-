@@ -1,32 +1,31 @@
 const { request, response } = require("express");
-const {InversionModel, RutaModel, CajaModel} = require('../models');
-const moment = require('moment-timezone');
-moment.tz.setDefault('America/Guatemala');
+const { InversionModel, RutaModel, CajaModel } = require('../models');
 
-const postInversion = async(req = request, res = response) => {
-
-  const {ruta} = req.usuario;
-  const body = req.body;
+const addInversion = async (req = request, res = response) => {
 
   try {
-    
+    const { valor, nota, idRuta, fecha } = req.body;
+
     const inversion = await InversionModel.create({
-      ...body,
-      ruta
+      valor,
+      nota,
+      fecha,
+      ruta: idRuta
     });
 
-    const rutaModel = await RutaModel.findById(ruta)
-    rutaModel.inversiones += body.valor;
-    await rutaModel.save();
+    const [ruta, cajaActual] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ ruta: idRuta, fecha })
+    ])
 
-    // actualizamos la caja
-    const cajaActual = await CajaModel.findById(rutaModel.caja_actual)
+    ruta.inversiones += valor;
+    await ruta.save();
 
-    cajaActual.inversion += body.valor;
-    cajaActual.caja_final += body.valor;
+    cajaActual.inversion += valor;
+    cajaActual.caja_final += valor;
     await cajaActual.save()
 
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       inversion
     })
@@ -40,13 +39,13 @@ const postInversion = async(req = request, res = response) => {
   }
 }
 
-const getInversiones = async(req = request, res = response) => {
+const getInversiones = async (req = request, res = response) => {
   try {
-    const {ruta} = req.params;
+    const { ruta } = req.params;
 
-    const inversiones = await InversionModel.find({ruta})
-    
-    res.status(200).json({
+    const inversiones = await InversionModel.find({ ruta })
+
+    return res.status(200).json({
       ok: true,
       inversiones
     })
@@ -59,13 +58,13 @@ const getInversiones = async(req = request, res = response) => {
   }
 }
 
-const getInversion = async(req = request, res = response) => {
-  const {idInversion} = req.params;
+const getInversionById = async (req = request, res = response) => {
   try {
-    
+
+    const { idInversion } = req.params;
     const inversion = await InversionModel.findById(idInversion);
 
-    res.status({
+    return res.status({
       ok: true,
       inversion
     })
@@ -76,11 +75,90 @@ const getInversion = async(req = request, res = response) => {
       ok: false,
       msg: "hable con el administrador"
     })
-  }  
+  }
+}
+
+const actualizarInversion = async (req = request, res = response) => {
+  try {
+    const { idInversion } = req.params;
+    const { _id, fecha, idRuta, nota, valor } = req.body;
+
+    const [ruta, inversion, cajaActual] = await Promise.all([
+      RutaModel.findById(idRuta),
+      InversionModel.findById(idInversion),
+      CajaModel.findOne({ ruta: idRuta, fecha })
+    ])
+
+    // regresamos todo a como estaba
+    ruta.inversiones -= inversion.valor;
+    cajaActual.inversion -= inversion.valor;
+    cajaActual.caja_final -= inversion.valor;
+
+    const inversionUpdated = await InversionModel.findByIdAndUpdate(idInversion, {
+      fecha, nota, valor
+    })
+
+    // actualizamos los valores
+    ruta.inversiones += valor;
+    cajaActual.inversion += valor;
+    cajaActual.caja_final += valor;
+
+    await ruta.save();
+    await inversion.save();
+    await cajaActual.save();
+
+    return res.status(200).json({
+      ok: true,
+      inversion: inversionUpdated
+    })
+
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const eliminarInversion = async (req = request, res = response) => {
+  try {
+    const { idInversion } = req.params;
+    const { fecha, idRuta } = req.body;
+
+    const [ruta, inversion, cajaActual] = await Promise.all([
+      RutaModel.findById(idRuta),
+      InversionModel.findById(idInversion),
+      CajaModel.findOne({ ruta: idRuta, fecha })
+    ])
+
+    ruta.inversiones -= inversion.valor;
+    cajaActual.inversion -= inversion.valor;
+    cajaActual.caja_final -= inversion.valor;
+
+    await ruta.save();
+    await inversion.save();
+    await cajaActual.save();
+
+    await InversionModel.findByIdAndDelete(idInversion);
+
+    return res.status(200).json({
+      ok: true,
+      msg: `Inversion eliminada correctamente`
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
 }
 
 module.exports = {
-  postInversion,
-  getInversion,
-  getInversiones
+  addInversion,
+  getInversionById,
+  getInversiones,
+  actualizarInversion,
+  eliminarInversion
 }
