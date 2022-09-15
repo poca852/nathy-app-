@@ -5,12 +5,13 @@ moment.tz.setDefault('America/Guatemala');
 
 const getGastos = async (req = request, res = response) => {
 
-  const { ruta } = req.usuario;
+  const { idRuta } = req.params;
 
   try {
 
-    const gastos = await GastoModel.find({ ruta })
-    res.status(200).json({
+    const gastos = await GastoModel.find({ ruta: idRuta })
+
+    return res.status(200).json({
       ok: true,
       gastos
     })
@@ -24,13 +25,13 @@ const getGastos = async (req = request, res = response) => {
   }
 }
 
-const getGasto = async (req = request, res = response) => {
+const getGastoById = async (req = request, res = response) => {
   try {
     const { idGasto } = req.params;
 
     const gasto = await GastoModel.findById(idGasto);
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: false,
       gasto
     })
@@ -42,35 +43,38 @@ const getGasto = async (req = request, res = response) => {
   }
 }
 
-const postGastos = async (req = request, res = response) => {
-
-  const { ruta } = req.usuario;
-  const { valor, gasto, nota, fecha } = req.body;
+const addGasto = async (req = request, res = response) => {
 
   try {
+    const { gasto,
+            fecha,
+            valor,
+            nota,
+            idRuta } = req.body;
 
     const nuevoGasto = await GastoModel.create({
       gasto,
       fecha,
       valor,
       nota,
-      ruta
+      ruta: idRuta
     });
 
+    const [ruta, cajaActual] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ruta: idRuta, fecha})
+    ])
+
     // actualizamos la ruta
-    const rutaModel = await RutaModel.findById(ruta)
-      .populate('caja_actual')
-    rutaModel.gastos += valor;
-    await rutaModel.save();
+    ruta.gastos += valor;
+    await ruta.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
-
     cajaActual.gasto += valor;
     cajaActual.caja_final -= valor;
     await cajaActual.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       gasto: nuevoGasto
     })
@@ -84,8 +88,86 @@ const postGastos = async (req = request, res = response) => {
   }
 }
 
+const actualizarGasto = async( req = request, res = response ) => {
+  try{
+    const { idGasto } = req.params;
+    const { _id, valor, idRuta, nota, gasto, fecha } = req.body;
+
+    const [ ruta, cajaActual, gastoModel ] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ruta: idRuta, fecha}),
+      GastoModel.findById(idGasto)
+    ])
+
+    ruta.gastos -= gastoModel.valor;
+    cajaActual.gasto -= gastoModel.valor;
+    cajaActual.caja_final += gastoModel.valor;
+
+    const gastoUpdated = await GastoModel.findByIdAndUpdate(idGasto, {
+      fecha,
+      valor,
+      nota
+    }, {new: true});
+
+    ruta.gastos -= valor;
+    cajaActual.gasto -= valor;
+    cajaActual.caja_final += valor;
+
+    await ruta.save();
+    await cajaActual.save();
+
+    return res.status(200).json({
+      ok: true,
+      gasto: gastoUpdated
+    })
+
+
+  }catch(err){
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el adminisrador'
+    })
+  }
+}
+const eliminarGasto = async( req = request, res = response ) => {
+  try{
+    const { idGasto } = req.params;
+    const { idRuta, fecha } = req.body;
+
+    const [ ruta, cajaActual, gastoModel ] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ruta: idRuta, fecha}),
+      GastoModel.findById(idGasto)
+    ])
+
+    ruta.gastos -= gastoModel.valor;
+    cajaActual.gasto -= gastoModel.valor;
+    cajaActual.caja_final += gastoModel.valor;
+
+    await ruta.save();
+    await cajaActual.save();
+
+    // eliminamos el gasto
+    await GastoModel.findByIdAndDelete(idGasto);
+
+    return res.status(200).json({
+      ok: true,
+      msg: 'Gasto Eliminado correctamente'
+    })
+  }catch(err){
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el adminisrador'
+    })
+  }
+}
+
 module.exports = {
   getGastos,
-  postGastos,
-  getGasto
+  addGasto,
+  getGastoById,
+  actualizarGasto,
+  eliminarGasto
 }
