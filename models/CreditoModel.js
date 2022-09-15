@@ -21,12 +21,12 @@ const CreditoModel = new Schema({
 
   interes: {
     type: Number,
-    default: 0.20
+    required: true
   },
 
   total_cuotas: {
     type: Number,
-    default: 20    
+    required: true    
   },
 
   total_pagar: {

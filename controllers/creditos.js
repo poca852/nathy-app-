@@ -4,23 +4,31 @@ const { generarCredito } = require("../helpers/creditos");
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 
-const postCredito = async (req = request, res = response) => {
-
-  const { idCliente } = req.params;
-  const { ruta } = req.usuario;
-  const { valor_credito, interes, total_cuotas, notas, fecha } = req.body;
-  // const hoy = moment().format('DD/MM/YYYY');
+const addCredito = async (req = request, res = response) => {
 
   try {
+    const { valor_credito, 
+            interes, 
+            total_cuotas, 
+            notas, 
+            fecha, 
+            idCliente,
+            idRuta } = req.body;
+
 
     // creamos la data que hace falta guardar
-    const data = generarCredito(valor_credito, interes, total_cuotas);
+    const { total_pagar, valor_cuota } = generarCredito(valor_credito, interes, total_cuotas);
 
     // creamos el credito
     const credito = await CreditoModel.create({
-      ...data,
+      total_pagar,
+      valor_cuota,
+      valor_credito,
+      total_cuotas,
+      interes,
+      saldo: total_pagar,
       fecha_inicio: fecha,
-      ruta, 
+      ruta: idRuta, 
       cliente: idCliente,
       notas
     });
