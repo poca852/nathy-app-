@@ -13,8 +13,28 @@ const coleccionesPermitidas = [
   'pagos'
 ];
 
+const buscarClientes = async(termino = '', res = response) => {
+  const esMongoId = ObjectId.isValid(termino);
 
-const buscarCreditosByName = async(termino = '', req = request, res = response) => {
+  if(esMongoId){
+    const cliente = await ClienteModel.findById(termino);
+    return res.status(200).json({
+      results: (cliente) ? [cliente] : []
+    })
+  }
+
+  const regex = new RegExp(termino, 'i');
+  const clientes = await ClienteModel.find({
+    $or: [{nombre: regex}, {alias: regex}],
+    $and: [{status: true}]
+  });
+
+  return res.status(200).json({
+    results: clientes
+  })
+}
+
+const buscarCreditosByName = async(termino = '', res = response) => {
   const {ruta} = req.usuario;
 
   const allCreditos = await CreditoModel.find({ruta, status: true})
@@ -37,7 +57,7 @@ const buscarCreditosByName = async(termino = '', req = request, res = response) 
 
 }
 
-const buscarClienteEnPagos = async(termino = '', req = request, res = response) => {
+const buscarClienteEnPagos = async(termino = '', res = response) => {
   const { ruta } = req.usuario;
 
   const hoy = moment().format('DD/MM/YYYY')
@@ -71,12 +91,15 @@ const buscar = (req, res = response) => {
 
   switch (coleccion) {
     case 'creditos':
-      buscarCreditosByName(termino, req, res)
+      buscarCreditosByName(termino, res)
       break;
 
     case 'pagos': 
-      buscarClienteEnPagos(termino, req, res)
+      buscarClienteEnPagos(termino, res)
       break;
+
+    case 'clientes':
+      buscarClientes(termino, res)
   
     default:
       res.status(401).json({
