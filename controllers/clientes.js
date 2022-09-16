@@ -1,23 +1,29 @@
 const { request, response } = require("express");
-const {ClienteModel, RutaModel} = require('../models');
+const { ClienteModel, RutaModel } = require('../models');
 
-const getClientes = async(req = request, res = response) => {
+const getClientes = async (req = request, res = response) => {
 
-  const {ruta} = req.usuario;
-  const {status, state = true} = req.query;
   try {
-    
-    const clientes = await ClienteModel.find({
-      $or: [{ruta}],
-      $and: [{status}, {state}]
-    })
-    .populate('creditos')
+    const { idRuta } = req.params;
+    let { status } = req.query;
 
-    res.status(200).json({
+    if(status.toLowerCase() === 'true'){
+      status = true
+    }
+
+    if(status.toLowerCase() === 'false'){
+      status = false;
+    }
+
+
+    const clientes = await ClienteModel.find({ruta: idRuta, status})
+      .populate('creditos')
+
+    return res.status(200).json({
       ok: true,
       clientes
     })
-    
+
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -27,16 +33,16 @@ const getClientes = async(req = request, res = response) => {
   }
 }
 
-const getCliente = async(req = request, res = response) => {
+const getClienteById = async (req = request, res = response) => {
 
-  const {ruta} = req.usuario;
-  const {id} = req.params;
-
+  
   try {
 
-    let cliente = await ClienteModel.findById(id);
+    const { idCliente } = req.params;
 
-    res.status(200).json({
+    const cliente = await ClienteModel.findById(id);
+
+    return res.status(200).json({
       ok: true,
       cliente
     })
@@ -49,21 +55,27 @@ const getCliente = async(req = request, res = response) => {
   }
 }
 
-const postCliente = async(req = request, res = response) => {
+const addCliente = async (req = request, res = response) => {
 
-  const {ruta} = req.usuario;
-  const {nombre, dpi, ciudad, direccion, alias, telefono} = req.body;
   try {
+    
+    const { nombre, 
+            dpi, 
+            ciudad, 
+            direccion, 
+            alias, 
+            telefono, 
+            idRuta } = req.body;
 
     // verifico que el dpi ya existe en dicha ruta
-    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ruta, dpi});
-    if(verificarSiExisteClienteEnRuta){
+    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ ruta: idRuta, dpi });
+    if (verificarSiExisteClienteEnRuta) {
       return res.status(400).json({
         ok: false,
         msg: `El cliente ${verificarSiExisteClienteEnRuta.nombre} ya existe en esta ruta`
       })
     }
-    
+
     const nuevoCliente = await ClienteModel.create({
       nombre,
       dpi,
@@ -71,7 +83,7 @@ const postCliente = async(req = request, res = response) => {
       direccion,
       alias,
       telefono,
-      ruta
+      ruta: idRuta
     });
 
     // actualizamos el numero de clientes de la ruta
@@ -79,7 +91,7 @@ const postCliente = async(req = request, res = response) => {
     rutaModel.clientes += 1;
     await rutaModel.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       cliente: nuevoCliente
     })
@@ -93,17 +105,16 @@ const postCliente = async(req = request, res = response) => {
   }
 }
 
-const pathCliente = async(req = request, res = response) => {
+const actualizarCliente = async (req = request, res = response) => {
 
-  const {id} = req.params;
-  const {_id, ruta, usuario, ...resto} = req.body;
- 
+  
   try {
+    const { idCliente } = req.params;
+    const { _id, idRuta, ...resto } = req.body;
+    const cliente = await ClienteModel.findByIdAndUpdate(idCliente, resto, { new: true });
 
-    const cliente = await ClienteModel.findByIdAndUpdate(id, resto, {new: true});
+    return res.status(201).json(cliente)
 
-    res.status(201).json(cliente)
-    
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -113,15 +124,33 @@ const pathCliente = async(req = request, res = response) => {
   }
 }
 
-const deleteCliente = async(req = request, res = response) => {
-
-  const {id} = req.params;
+const eliminarCliente = async (req = request, res = response) => {
 
   try {
+    const { idCliente } = req.params;
+    const { idRuta } = req.body;
 
-    const cliente = await ClienteModel.findByIdAndUpdate(id, {estado: false});
-    res.status(201).json(cliente);
-    
+    const [ruta, cliente] = await Promise.all([
+      RutaModel.findById(idRuta),
+      ClienteModel.findById(idCliente)
+    ])
+
+    if(cliente.status){
+      return res.status(400).json({
+        ok: false,
+        msg: 'Hable con el administrador del sistema, este cliente aun tiene un credito activo'
+      })
+    }
+
+    ruta.clientes -= 1;
+    await ClienteModel.findByIdAndDelete(idCliente);
+    await ruta.save();
+
+    return res.status(201).json({
+      ok: true,
+      msg: 'Cliente eliminado correctamente'
+    });
+
   } catch (error) {
     console.log(error)
     res.status(500).json({
@@ -133,8 +162,8 @@ const deleteCliente = async(req = request, res = response) => {
 
 module.exports = {
   getClientes,
-  getCliente,
-  postCliente,
-  pathCliente,
-  deleteCliente
+  getClienteById,
+  addCliente,
+  actualizarCliente,
+  eliminarCliente
 }

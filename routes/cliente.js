@@ -3,12 +3,12 @@ const {check} = require('express-validator');
 
 // controllers
 const { getClientes, 
-        postCliente, 
-        getCliente, 
-        pathCliente, 
-        deleteCliente } = require('../controllers/clientes');
+        addCliente, 
+        getClienteById, 
+        actualizarCliente, 
+        eliminarCliente } = require('../controllers/clientes');
         
-const { validarClienteById, validarDpi } = require('../helpers');
+const { validarClienteById, validarDpi, validarRutaById } = require('../helpers');
 // const { validarCliente } = require('../helpers/db-validators');
 
 // middlewares
@@ -17,8 +17,10 @@ const { validarCampos, validarJWT } = require('../middlewares')
 const router = Router();
 
 // get todos los clientes
-router.get('/', [
+router.get('/:idRuta', [
   validarJWT,
+  check('idRuta', 'no es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
   validarCampos
 ], getClientes);
 
@@ -31,28 +33,36 @@ router.post('/', [
   check('nombre', 'El nombre es obligatorio').not().isEmpty().isLength({min: 4}),
   check('ciudad', 'La ciudad es obligatoria').not().isEmpty().isLength({min: 4}),
   check('direccion', 'La direccion es obligatoria').not().isEmpty().isLength({min: 4}),
+  check('idRuta', 'no es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
   validarCampos
-], postCliente);
+], addCliente);
 
 // get un cliente por id
-router.get('/:id', [
+router.get('/:idCliente', [
   validarJWT,
-  check('id').custom(validarClienteById),
+  check('idCliente', 'No es un id valido').isMongoId(),
+  check('idCliente').custom(validarClienteById),
   validarCampos
-], getCliente);
+], getClienteById);
 
 // actualizar un cliente
-router.patch('/:id', [
+router.patch('/:idCliente', [
   validarJWT,
-  check('id').custom(validarClienteById),
+  check('idCliente', 'No es un id valido').isMongoId(),
+  check('idCliente').custom(validarClienteById),
   validarCampos
-], pathCliente);
+], actualizarCliente);
 
 // eliminar un usuario
-router.delete('/:id', [
+router.delete('/:idCliente', [
   validarJWT,
-  check('id').custom(validarClienteById),
+  check('idCliente', 'No es un id valido').isMongoId(),
+  check('idCliente').custom(validarClienteById),
+
+  check('idRuta', 'No es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
   validarCampos
-], deleteCliente);
+], eliminarCliente);
 
 module.exports = router;
