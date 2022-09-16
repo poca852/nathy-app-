@@ -1,59 +1,53 @@
 const { request, response } = require("express");
 const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
-const { generarCredito } = require("../helpers/creditos");
-const moment = require('moment-timezone');
-moment.tz.setDefault('America/Guatemala');
+const { generarCredito, updatedCredito } = require("../helpers/creditos");
 
 const addCredito = async (req = request, res = response) => {
 
   try {
-    const { valor_credito, 
-            interes, 
-            total_cuotas, 
-            notas, 
-            fecha, 
-            idCliente,
-            idRuta } = req.body;
+    /* datos que necesita esta body valor_credito, 
+        valor_credito, 
+  interes, 
+  total_cuotas, 
+  notas, 
+  fecha, 
+  idCliente,
+  idRuta*/
+    const body = req.body;
 
 
     // creamos la data que hace falta guardar
-    const { total_pagar, valor_cuota } = generarCredito(valor_credito, interes, total_cuotas);
+    const dataDelCredito = generarCredito(body);
 
     // creamos el credito
     const credito = await CreditoModel.create({
-      total_pagar,
-      valor_cuota,
-      valor_credito,
-      total_cuotas,
-      interes,
-      saldo: total_pagar,
-      fecha_inicio: fecha,
-      ruta: idRuta, 
-      cliente: idCliente,
-      notas
+      ...dataDelCredito
     });
 
+    const [clienteModel, rutaModel, cajaActual] = await Promise.all([
+      ClienteModel.findById(body.idCliente),
+      RutaModel.findById(body.idRuta),
+      CajaModel.findOne({ruta: body.idRuta, fecha: body.fecha})
+    ])
+
     // actualizamos el status del cliente, y actualizaos el arreglo de creditos del cliente
-    const clienteModel = await ClienteModel.findByIdAndUpdate(idCliente, {status: true}, {new: true});
+    clienteModel.status = true;
     clienteModel.creditos.unshift(credito)
     await clienteModel.save();
 
     // actualizamos el camp total_prestado e incrementamos la cartera de la ruta
-    const rutaModel = await RutaModel.findById(ruta);
-    rutaModel.total_prestado += valor_credito;
-    rutaModel.cartera += data.total_pagar;
+    rutaModel.total_prestado += body.valor_credito;
+    rutaModel.cartera += dataDelCredito.total_pagar;
     await rutaModel.save();
 
     // actualizamos la caja
-    const cajaActual = await CajaModel.findById(rutaModel.caja_actual._id)
-
     cajaActual.prestamo += valor_credito;
     cajaActual.caja_final -= valor_credito;
     cajaActual.renovaciones += 1;
     await cajaActual.save();
 
 
-    res.status(201).json({
+    return res.status(201).json({
       ok: true,
       credito
     })
@@ -69,14 +63,23 @@ const addCredito = async (req = request, res = response) => {
 
 const getCreditos = async (req = request, res = response) => {
 
-  const { ruta } = req.usuario;
   try {
+    const { idRuta } = req.params;
+    let { status } = req.query;
 
-    const creditos = await CreditoModel.find({ruta, status: true})
+    if(status.toLowerCase() === 'true'){
+      status = true;
+    }
+
+    if(status.toLowerCase() === 'false'){
+      status = false;
+    }
+
+    const creditos = await CreditoModel.find({ruta: idRuta, status})
       .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
       .populate('pagos', ['fecha', 'valor'])
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       creditos
     })
@@ -90,18 +93,19 @@ const getCreditos = async (req = request, res = response) => {
   }
 }
 
-const getCredito = async (req = request, res = response) => {
+const getCreditoById = async (req = request, res = response) => {
 
   // const {ruta} = req.usuario;
-  const { id } = req.params;
-
+  
   try {
 
-    const credito = await CreditoModel.findById(id)
-    .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
-    .populate('pagos', ['fecha', 'valor'])
+    const { idCredito } = req.params;
 
-    res.status(200).json({
+    const credito = await CreditoModel.findById(idCredito)
+      .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
+      .populate('pagos', ['fecha', 'valor'])
+
+    return res.status(200).json({
       ok: true,
       credito
     })
@@ -115,16 +119,75 @@ const getCredito = async (req = request, res = response) => {
   }
 }
 
-const patchCredito = async (req = request, res = response) => {
-
-  const { id } = req.params;
-  const data = req.body;
+const actualizarCredito = async (req = request, res = response) => {
 
   try {
 
-    const credito = await CreditoModel.findByIdAndUpdate(id, data);
+    const { idCredito } = req.params;
+
+    const { _id, 
+            idCliente, 
+            idRuta, 
+            interes, 
+            notas, 
+            fecha, 
+            total_cuotas,
+            valor_credito  } = req.body;
+
+    const [ ruta, credito, caja ] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CreditoModel.findById(idCredito),
+      CajaModel.findOne({ruta: idRuta, fecha}),
+    ]);
+
+    if(valor_credito){
+
+      credito.valor_credito = valor_credito;
+      credito.fecha_inicio = fecha;
+
+      if(interes){
+        credito.interes = interes;
+      }
+
+      if(total_cuotas){
+        credito.total_cuotas = total_cuotas;
+      }
+
+      if(notas){
+        credito.notas = notas;
+      }
+
+      // regresar todo como estaba
+      ruta.total_prestado -= credito.valor_credito;
+      ruta.cartera -= credito.saldo
+
+      caja.prestamo -= credito.valor_credito;
+      caja.caja_final += credito.valor_credito;
+
+      let { total_pagar, valor_cuota } = updatedCredito( credito.valor_credito, 
+        credito.interes, 
+        credito.total_cuotas);
+
+      credito.total_pagar = total_pagar;
+      credito.valor_cuota = valor_cuota;
+      credito.saldo = total_pagar;
+      credito.abonos = 0
+
+      // volver a calular los valores en caja y ruta
+      ruta.total_prestado += valor_credito;
+      ruta.cartera += total_pagar;
+
+      caja.prestamo += valor_credito;
+      caja.caja_final -= valor_credito;
+
+      // guardar todo 
+      await ruta.save();
+      await caja.save();
+      await credito.save();
+    }
+
     
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       credito
     })
@@ -138,13 +201,30 @@ const patchCredito = async (req = request, res = response) => {
   }
 }
 
-const deleteCredito = async (req = request, res = response) => {
-  const { id } = req.params;
+const eliminarCredito = async (req = request, res = response) => {
   try {
+    const { idCredito } = req.params;
+    const { fecha, idCliente, idRuta } = req.body;
+    
+    const [ruta, credito, cliente, caja] = await Promise.all([
+      RutaModel.findById(idRuta),
+      CreditoModel.findById(idCredito),
+      ClienteModel.findById(idCliente),
+      CajaModel.findOne({ruta: idRuta, fecha})
+    ])
+
+    cliente.status = false;
+    cliente.creditos = cliente.creditos.filter(c => c !== idCredito);
+    ruta.total_prestado -= credito.valor_credito;
+    ruta.cartera -= credito.saldo;
+    caja.prestamo -= credito.valor_credito;
+    caja.caja_final += credito.valor_credito;
+
+    await CreditoModel.findByIdAndDelete(idCredito);
 
     // const 
-    res.json({
-      msg: 'pendiente por resolver'
+    return res.status(200).json({
+      msg: 'Credito eliminado correctamente'
     })
 
   } catch (error) {
@@ -157,9 +237,9 @@ const deleteCredito = async (req = request, res = response) => {
 }
 
 module.exports = {
-  postCredito,
+  addCredito,
   getCreditos,
-  getCredito,
-  patchCredito,
-  deleteCredito,
+  getCreditoById,
+  actualizarCredito,
+  eliminarCredito,
 }

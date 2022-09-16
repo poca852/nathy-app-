@@ -1,23 +1,26 @@
 const { Router } = require('express');
 const { check } = require('express-validator');
 const { getCreditos,
-        postCredito,
-        getCredito,
-        patchCredito,
-        deleteCredito } = require('../controllers/creditos');
+        addCredito,
+        getCreditoById,
+        actualizarCredito,
+        eliminarCredito } = require('../controllers/creditos');
         
-const { validarClienteById, validarCreditoById, validarRutaById } = require('../helpers');
+const { validarClienteById, 
+        validarCreditoById, 
+        validarRutaById } = require('../helpers');
 
-const { validarCampos, validarJWT } = require('../middlewares');
-const { esSuperAdmin } = require('../middlewares/validar-roles');
+const { validarCampos, 
+        validarJWT,
+        esSuperAdmin } = require('../middlewares');
 
 const router = Router();
 
 // getCreditos
-router.get('/', [
+router.get('/:idRuta', [
         validarJWT,
-        // check('idRuta', 'no es un id valido').isMongoId(),
-        // check('idRuta').custom(validarRutaById),
+        check('idRuta', 'no es un id valido').isMongoId(),
+        check('idRuta').custom(validarRutaById),
         validarCampos
 ], getCreditos);
 
@@ -30,27 +33,39 @@ router.post('/:idCliente', [
         check('interes', 'El interes debe ser un numero').isNumeric(),
         check('total_cuotas', 'El numero de cuotas debe ser un numero').isNumeric(),
         validarCampos
-], postCredito);
+], addCredito);
 
 // getCredito
-router.get('/:id', [
+router.get('/:idCredito', [
         validarJWT,
-        check('id', 'No es un id valido').isMongoId(),
-        check('id').custom(validarCreditoById),
+        check('idCredito', 'No es un id valido').isMongoId(),
+        check('idCredito').custom(validarCreditoById),
         validarCampos
-], getCredito);
+], getCreditoById);
 
 // patchCredito
-router.patch('/:id', [
+router.put('/:idCredito', [
         validarJWT,
-        esSuperAdmin
-], patchCredito);
+        check('idCredito', 'No es un id valido').isMongoId(),
+        check('idCredito').custom(validarCreditoById),
+        check('idRuta', 'No es un id valido').isMongoId(),
+        check('idRuta').custom(validarRutaById),
+        validarCampos
+], actualizarCredito);
 
 // deleteCredito
-router.delete('/:id', [
+router.delete('/:idCredito', [
         validarJWT,
+        esSuperAdmin,
+        check('idCredito', 'No es un id valido').isMongoId(),
+        check('idCredito').custom(validarCreditoById),
+        check('idRuta', 'No es un id valido').isMongoId(),
+        check('idRuta').custom(validarRutaById),
+        check('idCliente', 'No es un id valido').isMongoId(),
+        check('idCliente').custom(validarClienteById),
+        check('fecha', 'La fecha es obligatoria').not().isEmpty(),
         esSuperAdmin
-], deleteCredito);
+], eliminarCredito);
 
 
 module.exports = router;
