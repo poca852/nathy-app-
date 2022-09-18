@@ -34,25 +34,23 @@ const buscarClientes = async(termino = '', res = response) => {
   })
 }
 
-const buscarCreditosByName = async(termino = '', res = response) => {
+const buscarCreditosByName = async(termino = '', res = response, req = request) => {
   const {ruta} = req.usuario;
 
   const allCreditos = await CreditoModel.find({ruta, status: true})
-    .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
+    .populate('cliente')
     .populate('pagos', ['fecha', 'valor'])
 
   const creditos = allCreditos.filter(c => c.cliente.alias.includes(termino.toUpperCase()));
 
   if(termino === 'all'){
     return res.status(200).json({
-      ok: true,
-      creditos: allCreditos
+      results: allCreditos
     })
   }
 
   res.status(200).json({
-    ok: true,
-    creditos
+    results: creditos
   })
 
 }
@@ -91,7 +89,7 @@ const buscar = (req, res = response) => {
 
   switch (coleccion) {
     case 'creditos':
-      buscarCreditosByName(termino, res)
+      buscarCreditosByName(termino, res, req)
       break;
 
     case 'pagos': 
@@ -100,6 +98,7 @@ const buscar = (req, res = response) => {
 
     case 'clientes':
       buscarClientes(termino, res)
+      break;
   
     default:
       res.status(401).json({

@@ -12,7 +12,6 @@ const login = async (req = request, res = response) => {
     // validamos que el usuario exista en la base de datos
     const user = await UsuarioModel.findOne({ username })
       .populate('rol', ['rol'])
-      .populate('ruta')
 
     if (!user) {
       return res.status(404).json({
@@ -58,7 +57,7 @@ const login = async (req = request, res = response) => {
 
     const token = await generarJWT(user.id);
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       user,
       token

@@ -18,7 +18,10 @@ const router = Router();
 // agregar inversion
 router.post('/', [
   validarJWT,
-  check('valor', 'No es un valor valido').isNumeric(),
+  check('valor', 'El Valor de la inversion es obligatoria').isNumeric(),
+  check('fecha', 'La fecha es obligatoria').not().isEmpty(),
+  check('idRuta', 'No es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
   validarCampos
 ], addInversion);
 

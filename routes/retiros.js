@@ -17,7 +17,7 @@ const router = Router();
 
 router.post('/', [
   validarJWT,
-  check('valor', 'no es un valor permitido').isNumeric(),
+  check('valor', 'El valor es obligatorio').isNumeric(),
   check('fecha', 'La fecha es obligatoria').not().isEmpty(),
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),

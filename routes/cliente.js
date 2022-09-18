@@ -16,13 +16,7 @@ const { validarCampos, validarJWT } = require('../middlewares')
 
 const router = Router();
 
-// get todos los clientes
-router.get('/:idRuta', [
-  validarJWT,
-  check('idRuta', 'no es un id valido').isMongoId(),
-  check('idRuta').custom(validarRutaById),
-  validarCampos
-], getClientes);
+
 
 // crear un cliente
 router.post('/', [
@@ -38,8 +32,16 @@ router.post('/', [
   validarCampos
 ], addCliente);
 
+// get todos los clientes
+router.get('/:idRuta', [
+  validarJWT,
+  check('idRuta', 'no es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
+  validarCampos
+], getClientes);
+
 // get un cliente por id
-router.get('/:idCliente', [
+router.get('/one/:idCliente', [
   validarJWT,
   check('idCliente', 'No es un id valido').isMongoId(),
   check('idCliente').custom(validarClienteById),

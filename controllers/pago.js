@@ -9,44 +9,37 @@ const getPagos = async (req = request, res = response) => {
 
   try {
 
-    const { idRuta } = req.params;
-    const { credito, fecha } = req.query;
-
-
+    const { idCliente, idCredito } = req.params;
     // si me mandan el cliente es porque solo quieren los pagos de un cliente
-    if (credito) {
-      // para obtener los pagos de cierte credito
-      const pagos = await PagoModel.find({ credito, ruta: idRuta });
-
-      if(!pagos || pagos.length === 0){
-        return res.status(404).json({
-          ok: false,
-          msg: 'No existe este credito'
-        })
-      }
-
-      return res.status(200).json({
-        ok: true,
-        pagos
-      })
-    }
-
-    // si me mandan la fecha es porque quieren los pagos de una fecha determinada
-    if (fecha) {
-      const pagos = await PagoModel.find({ fecha: new RegExp(fecha, 'i'), ruta: idRuta })
-        .populate('credito')
-        .populate('cliente')
-
-      return res.status(200).json({
-        ok: true,
-        pagos
-      })
-    }
-
-
-    const pagos = await PagoModel.find({ ruta: idRuta, fecha})
-      .populate('credito')
+    const pagos = await PagoModel.find({ cliente: idCliente, credito: idCredito })
       .populate('cliente')
+      .populate('credito')
+
+    return res.status(200).json({
+      ok: true,
+      pagos
+    })
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const getPagosParaVerificados = async (req = request, res = response) => {
+
+  try {
+
+    const { idRuta } = req.params;
+    const { fecha } = req.query;
+    // si me mandan el cliente es porque solo quieren los pagos de un cliente
+    const pagos = await PagoModel.find({ ruta: idRuta, fecha: new RegExp(fecha, 'i') })
+      .populate('cliente')
+      .populate('credito')
+
 
     return res.status(200).json({
       ok: true,
@@ -121,22 +114,21 @@ const addPago = async (req = request, res = response) => {
     // actualizar la caja
     if(calcularExtra(fecha, credito.fecha_inicio)){
       cajaActual.extra += valor;
-      cajaActual.caja_final += valor;
     }else{
 
       if(valor > credito.valor_cuota){
         let extra = valor - credito.valor_cuota;
         cajaActual.cobro += credito.valor_cuota;
         cajaActual.extra += extra;
-        cajaActual.caja_final += valor;
-        cajaActual.clientes_pendientes -= 1;
       }else{
         cajaActual.cobro += valor;
-        cajaActual.caja_final += valor;
-        cajaActual.clientes_pendientes -= 1;
       }
+      
+      cajaActual.clientes_pendientes -= 1;
 
     }
+
+    cajaActual.caja_final += valor;
 
     
     await credito.save();
@@ -163,9 +155,9 @@ const getPagoById = async (req = request, res = response) => {
   
   try {
     
-    const { id } = req.params;
+    const { idPago } = req.params;
 
-    const pago = await PagoModel.findById(id)
+    const pago = await PagoModel.findById(idPago)
       .populate('credito')
       .populate('cliente');
 
@@ -193,6 +185,7 @@ const updatePago = async (req = request, res = response) => {
             valor, 
             fecha, 
             ruta } = req.body;
+
 
     const queryFecha = fecha.split(' ');
 
@@ -350,5 +343,6 @@ module.exports = {
   addPago,
   getPagoById,
   updatePago,
-  eliminarPago
+  eliminarPago,
+  getPagosParaVerificados
 }

@@ -5,11 +5,13 @@ const { getPagos,
         addPago,
         getPagoById, 
         updatePago,
-        eliminarPago} = require('../controllers/pago');
+        eliminarPago,
+        getPagosParaVerificados} = require('../controllers/pago');
 
 const { validarCreditoById, 
         validarPago, 
-        validarRutaById} = require('../helpers');
+        validarRutaById,
+        validarClienteById} = require('../helpers');
         
 const { validarJWT, 
         validarCampos } = require('../middlewares/');
@@ -17,12 +19,22 @@ const { validarJWT,
 const router = Router();
 
 // getPagos
-router.get('/:idRuta', [
+router.get('/getPagos/:idCliente/:idCredito', [
+  validarJWT, 
+  check('idCliente', 'No es un id valido').isMongoId(),
+  check('idCliente').custom(validarClienteById),
+  check('idCredito', 'No es un id valido').isMongoId(),
+  check('idCredito').custom(validarCreditoById),
+  validarCampos
+], getPagos)
+
+// para ver los clientes verificados
+router.get('/verificados/:idRuta', [
   validarJWT, 
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
   validarCampos
-], getPagos)
+], getPagosParaVerificados)
 
 // addPago
 router.post('/:idCredito', [
@@ -34,7 +46,7 @@ router.post('/:idCredito', [
 ], addPago)
 
 //getPago
-router.get('/:idPago', [
+router.get('/one/:idPago', [
   validarJWT, 
   check('idPago', 'No es un id valido').isMongoId(),
   check('idPago').custom(validarPago),
@@ -42,10 +54,11 @@ router.get('/:idPago', [
 ], getPagoById)
 
 // actualizar el pago
-router.put('/:idPago', [
+router.put('/update/:idPago', [
   validarJWT,
   check('idPago', 'No es un id valido').isMongoId(),
   check('idPago').custom(validarPago),
+  check('valor', 'El valor es obligatorio').isNumeric(),
   validarCampos
 ], updatePago)
 

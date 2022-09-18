@@ -7,14 +7,7 @@ const getClientes = async (req = request, res = response) => {
     const { idRuta } = req.params;
     let { status } = req.query;
 
-    if(status.toLowerCase() === 'true'){
-      status = true
-    }
-
-    if(status.toLowerCase() === 'false'){
-      status = false;
-    }
-
+    status = JSON.parse(status);
 
     const clientes = await ClienteModel.find({ruta: idRuta, status})
       .populate('creditos')
@@ -34,13 +27,15 @@ const getClientes = async (req = request, res = response) => {
 }
 
 const getClienteById = async (req = request, res = response) => {
-
-  
   try {
 
     const { idCliente } = req.params;
 
-    const cliente = await ClienteModel.findById(id);
+    const cliente = await ClienteModel.findById(idCliente)
+      .populate({
+        path: 'creditos',
+        populate: {path: 'pagos'}
+      })
 
     return res.status(200).json({
       ok: true,

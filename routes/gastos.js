@@ -30,8 +30,11 @@ router.get('/:idGasto', [
 
 router.post('/', [
   validarJWT,
-  check('valor', 'el valor tiene que ser  un numero').isNumeric(),
+  check('valor', 'El valor del gasto es obligatorio').isNumeric(),
   check('gasto').custom(validarGastoById),
+  check('fecha', 'La fecha es obligatoria').not().isEmpty(),
+  check('idRuta', 'no es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
   validarCampos
 ], addGasto)
 

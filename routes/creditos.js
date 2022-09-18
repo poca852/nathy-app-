@@ -17,10 +17,8 @@ const { validarCampos,
 const router = Router();
 
 // getCreditos
-router.get('/:idRuta', [
+router.get('/', [
         validarJWT,
-        check('idRuta', 'no es un id valido').isMongoId(),
-        check('idRuta').custom(validarRutaById),
         validarCampos
 ], getCreditos);
 

@@ -105,7 +105,7 @@ const getRutaById = async (req = request, res = response) => {
 
     const [ruta, creditos] = await Promise.all([
       RutaModel.findById(idRuta),
-      CreditoModel.findOne({ruta: idRuta, status: true})
+      CreditoModel.find({ruta: idRuta, status: true})
     ])
 
     let cartera = 0;

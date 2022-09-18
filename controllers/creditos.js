@@ -68,20 +68,13 @@ const addCredito = async (req = request, res = response) => {
 const getCreditos = async (req = request, res = response) => {
 
   try {
-    const { idRuta } = req.params;
-    let { status } = req.query;
+    let { status, idRuta } = req.query;
 
-    if(status.toLowerCase() === 'true'){
-      status = true;
-    }
-
-    if(status.toLowerCase() === 'false'){
-      status = false;
-    }
+    status = JSON.parse(status);
 
     const creditos = await CreditoModel.find({ruta: idRuta, status})
-      .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
-      .populate('pagos', ['fecha', 'valor'])
+      .populate('cliente')
+      .populate('pagos')
 
     return res.status(200).json({
       ok: true,
