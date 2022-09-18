@@ -5,6 +5,8 @@ const { generarCredito, updatedCredito } = require("../helpers/creditos");
 const addCredito = async (req = request, res = response) => {
 
   try {
+
+  const { idCliente } = req.params;
     /* datos que necesita esta body valor_credito, 
         valor_credito, 
   interes, 
@@ -15,17 +17,17 @@ const addCredito = async (req = request, res = response) => {
   idRuta*/
     const body = req.body;
 
-
     // creamos la data que hace falta guardar
     const dataDelCredito = generarCredito(body);
 
     // creamos el credito
     const credito = await CreditoModel.create({
-      ...dataDelCredito
+      ...dataDelCredito,
+      cliente: idCliente
     });
 
     const [clienteModel, rutaModel, cajaActual] = await Promise.all([
-      ClienteModel.findById(body.idCliente),
+      ClienteModel.findById(idCliente),
       RutaModel.findById(body.idRuta),
       CajaModel.findOne({ruta: body.idRuta, fecha: body.fecha})
     ])
@@ -38,12 +40,14 @@ const addCredito = async (req = request, res = response) => {
     // actualizamos el camp total_prestado e incrementamos la cartera de la ruta
     rutaModel.total_prestado += body.valor_credito;
     rutaModel.cartera += dataDelCredito.total_pagar;
+    rutaModel.clientes_activos += 1;
     await rutaModel.save();
 
     // actualizamos la caja
-    cajaActual.prestamo += valor_credito;
-    cajaActual.caja_final -= valor_credito;
+    cajaActual.prestamo += body.valor_credito;
+    cajaActual.caja_final -= body.valor_credito;
     cajaActual.renovaciones += 1;
+    cajaActual.total_clientes += 1;
     await cajaActual.save();
 
 

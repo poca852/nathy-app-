@@ -55,7 +55,7 @@ router.put('/add-empleado/:idRuta', [
   esSuperAdmin,
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
-  check('empleado').custom(validarUsuarioById),
+  check('idEmpleado').custom(validarUsuarioById),
   validarCampos
 ], addEmpleado); 
 
@@ -63,6 +63,7 @@ router.patch('/close/:idRuta', [
   validarJWT,
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
+  check('fecha').not().isEmpty(),
   validarCampos
 ], closeRuta);
 
@@ -71,16 +72,17 @@ router.patch('/open/:idRuta', [
   esSuperAdmin,
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
+  check('fecha').not().isEmpty(),
   validarCampos
 ], openRuta);
 
-router.put('/add-ruta-admin/:idAdmin/:idRuta', [
+router.put('/add-ruta-admin/:idRuta', [
   validarJWT,
   esSuperAdmin,
-  check('idAdmin', 'No es un id valido').isMongoId(),
-  check('idAdmin').custom(validarUsuarioById),
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
+  check('idAdmin', 'No es un id valido').isMongoId(),
+  check('idAdmin').custom(validarUsuarioById),
   validarCampos
 ], addRutaAdmin)
 

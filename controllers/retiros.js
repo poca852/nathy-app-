@@ -11,18 +11,18 @@ const addRetiro = async (req = request, res = response) => {
   const { fecha,
           valor,
           nota,
-          ruta } = req.body;
+          idRuta } = req.body;
 
     const retiro = await RetiroModel.create({
       fecha,
       valor,
       nota, 
-      ruta
+      ruta: idRuta
     });
 
     const [rutaModel, cajaActual] = await Promise.all([
-      RutaModel.findById(ruta),
-      CajaModel.findOne({ruta, fecha})
+      RutaModel.findById(idRuta),
+      CajaModel.findOne({ruta: idRuta, fecha})
     ])
 
     rutaModel.retiros += valor;

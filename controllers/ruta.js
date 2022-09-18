@@ -157,9 +157,9 @@ const addEmpleado = async(req = request, res = response) => {
   try{
 
     const { idRuta } = req.params;
-    const { empleado } = req.body;
+    const { idEmpleado } = req.body;
 
-    const usuario = await UsuarioModel.findByIdAndUpdate(empleado, {ruta: idRuta}, {new: true});
+    const usuario = await UsuarioModel.findByIdAndUpdate(idEmpleado, {ruta: idRuta}, {new: true});
     
     return res.status(201).json({
       ok: true,
@@ -193,7 +193,7 @@ const closeRuta = async (req = request, res = response) => {
 
     await ruta.save()
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true
     })
 
@@ -271,7 +271,7 @@ const openRuta = async (req = request, res = response) => {
     await ruta.save();
 
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true
     })
 
@@ -287,17 +287,17 @@ const openRuta = async (req = request, res = response) => {
 const addRutaAdmin = async (req = request, res = response) => {
   try {
     const { idRuta } = req.params;
-    const { usuario } = req.body
+    const { idAdmin } = req.body
 
     const [user, ruta] = await Promise.all([
-      UsuarioModel.findById(usuario),
+      UsuarioModel.findById(idAdmin),
       RutaModel.findById(idRuta)
     ])
 
     user.rutas.push(idRuta);
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       ok: true,
       msg: `El Administrador ${user.nombre} ahora administra la ruta ${ruta.nombre}`
     })

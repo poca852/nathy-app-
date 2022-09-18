@@ -73,6 +73,11 @@ const CajaModel = new Schema({
     default: 0
   },
 
+  extra: {
+    type: Number,
+    default: 0
+  },
+
   ruta: {
     type: Schema.Types.ObjectId,
     ref: 'RutaModel',

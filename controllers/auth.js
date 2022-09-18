@@ -11,7 +11,7 @@ const login = async (req = request, res = response) => {
 
     // validamos que el usuario exista en la base de datos
     const user = await UsuarioModel.findOne({ username })
-      .populate('rol')
+      .populate('rol', ['rol'])
       .populate('ruta')
 
     if (!user) {
@@ -140,7 +140,7 @@ const adminLogin = async(req = request, res = response) => {
     const { username, password } = req.body;
 
     const user = await UsuarioModel.findOne({username})
-      .populate('rol')
+      .populate('rol', 'rol')
       .populate('rutas')
 
     if(!user){

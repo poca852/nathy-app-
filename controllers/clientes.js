@@ -87,7 +87,7 @@ const addCliente = async (req = request, res = response) => {
     });
 
     // actualizamos el numero de clientes de la ruta
-    const rutaModel = await RutaModel.findById(ruta);
+    const rutaModel = await RutaModel.findById(idRuta);
     rutaModel.clientes += 1;
     await rutaModel.save();
 

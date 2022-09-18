@@ -94,7 +94,19 @@ const getCajaAyer = async(ruta, fecha) => {
 
 }
 
+const calcularExtra = (fecha, fechaInicio) => {
+
+  let arrFecha = fecha.split(' ');
+
+  if(arrFecha[0] === fechaInicio){
+    return true;
+  }
+
+  return false;
+}
+
 module.exports = {
   getDataCaja,
-  getCajaAyer
+  getCajaAyer,
+  calcularExtra
 }

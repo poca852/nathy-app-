@@ -32,6 +32,8 @@ router.post('/:idCliente', [
         check('valor_credito', 'Monto Incorrecto').isNumeric(),
         check('interes', 'El interes debe ser un numero').isNumeric(),
         check('total_cuotas', 'El numero de cuotas debe ser un numero').isNumeric(),
+        check('idRuta', 'no es un id valido').isMongoId(),
+        check('idRuta').custom(validarRutaById),
         validarCampos
 ], addCredito);
 

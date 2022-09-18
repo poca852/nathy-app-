@@ -4,7 +4,6 @@ const generarCredito = ( {
   total_cuotas, 
   notas, 
   fecha, 
-  idCliente,
   idRuta
 } ) => {
 
@@ -20,7 +19,6 @@ const generarCredito = ( {
     saldo: total_pagar,
     fecha_inicio: fecha,
     ruta: idRuta,
-    cliente: idCliente,
     notas
   }
 
@@ -35,6 +33,7 @@ const updatedCredito = (valor_credito, interes, total_cuotas) => {
     valor_cuota
   }
 }
+
 
 module.exports = {
   generarCredito,

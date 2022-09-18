@@ -1,6 +1,7 @@
 const { request, response } = require("express");
 const { CreditoModel, ClienteModel, PagoModel, RutaModel, CajaModel } = require('../models');
 const moment = require('moment');
+const { calcularExtra } = require("../helpers/caja");
 moment.tz.setDefault('America/Guatemala');
 
 // getPagos
@@ -66,22 +67,26 @@ const addPago = async (req = request, res = response) => {
   
   try {
 
-    const { valor, fecha, ruta } = req.body;
+    const { valor, fecha, idRuta } = req.body;
     const { idCredito } = req.params;
 
-    const [ rutaModel, creditoModel, cajaActual ] = await Promise.all([
-      RutaModel.findById(ruta),
+    const query = fecha.split(' ');
+
+    const [ ruta, credito, cajaActual ] = await Promise.all([
+      RutaModel.findById(idRuta),
       CreditoModel.findById(idCredito)
         .populate('cliente', 'id'),
-      CajaModel.findOne({ruta, fecha})
+      CajaModel.findOne({
+        $or: [{fecha: query[0]}],
+        $and: [{ruta: idRuta}] 
+      })
     ])
 
-
     // verifico que el valor sea menor al saldo del credito 
-    if (valor > creditoModel.saldo) {
+    if (valor > credito.saldo) {
       return res.status(401).json({
         ok: false,
-        msg: `El saldo del cliente es ${creditoModel.saldo}`
+        msg: `El saldo del cliente es ${credito.saldo}`
       })
     }
 
@@ -89,36 +94,53 @@ const addPago = async (req = request, res = response) => {
     const newPago = await PagoModel.create({
       valor,
       fecha,
-      ruta,
+      ruta: idRuta,
       credito: idCredito,
-      cliente: creditoModel.cliente.id
+      cliente: credito.cliente.id
     })
 
     // se agrega el pago al arreglo de pagos que tiene el credito y aparte de eso se hacen las operaciones en los campos de saldo y abonos
-    creditoModel.pagos.unshift(newPago);
-    creditoModel.ultimo_pago = moment().utc(true).format('DD/MM/YYYY');
-    creditoModel.abonos += valor;
-    creditoModel.saldo -= valor;
+    credito.pagos.unshift(newPago);
+    credito.ultimo_pago = query[0];
+    credito.abonos += valor;
+    credito.saldo -= valor;
 
     // si el saldo del credito despues de hacer el pago es 0 tenemos que cambiar el status del credito y del cliente
-    if (creditoModel.saldo === 0) {
-      creditoModel.status = false;
-      await ClienteModel.findByIdAndUpdate(creditoModel.cliente.id, { status: false })
+    if (credito.saldo === 0) {
+      credito.status = false;
+      ruta.clientes_activos -= 1;
+      await ClienteModel.findByIdAndUpdate(credito.cliente.id, { status: false })
     }
 
     // finalmente guardamos los cambios en credito
-    await creditoModel.save();
-
+    
     // actualizamos la ruta con el total_cobrado
-    rutaModel.total_cobrado += valor;
-    await rutaModel.save();
-
+    ruta.total_cobrado += valor;
+    ruta.cartera -= valor;
+    
     // actualizar la caja
+    if(calcularExtra(fecha, credito.fecha_inicio)){
+      cajaActual.extra += valor;
+      cajaActual.caja_final += valor;
+    }else{
 
-    cajaActual.cobro += valor;
-    cajaActual.caja_final += valor;
-    cajaActual.clientes_pendientes -= 1;
+      if(valor > credito.valor_cuota){
+        let extra = valor - credito.valor_cuota;
+        cajaActual.cobro += credito.valor_cuota;
+        cajaActual.extra += extra;
+        cajaActual.caja_final += valor;
+        cajaActual.clientes_pendientes -= 1;
+      }else{
+        cajaActual.cobro += valor;
+        cajaActual.caja_final += valor;
+        cajaActual.clientes_pendientes -= 1;
+      }
 
+    }
+
+    
+    await credito.save();
+    await ruta.save();
     await cajaActual.save()
 
     return res.status(201).json({
@@ -172,17 +194,22 @@ const updatePago = async (req = request, res = response) => {
             fecha, 
             ruta } = req.body;
 
+    const queryFecha = fecha.split(' ');
+
     const [getPago, getRuta, getCredito, cajaActual, clienteModel] = await Promise.all([
       PagoModel.findById(idPago)
         .populate('credito', 'id'),
       RutaModel.findById(ruta),
       CreditoModel.findById(credito)
         .populate('cliente', 'id'),
-      CajaModel.findOne({ruta, fecha}),
+      CajaModel.findOne({ruta, fecha: queryFecha[0]}),
       ClienteModel.findById(cliente)
     ])
 
     // actualizamos
+    if(!getCredito.status){
+      getRuta.clientes_activos += 1;
+    }
 
     // lo primero devolver todo a como estaba
     getCredito.status = true; // devolvermos el estatus del credito a true
@@ -190,8 +217,15 @@ const updatePago = async (req = request, res = response) => {
     getCredito.abonos -= getPago.valor; // devolvemos los abonos como estaban
 
     getRuta.total_cobrado -= getPago.valor; // devolvemos los abonos totales de la ruta
+    getRuta.cartera += getPago.valor;
 
-    cajaActual.cobro -= getPago.valor; // devolvemos el cobro de la caja a su estado normal
+    // dependiendo si es un pago extra o no, actualizamos el campo extra o cobro respectivamente
+    if(queryFecha[0] === getCredito.fecha_inicio){
+      cajaActual.extra -= getPago.valor;
+    }else{
+      cajaActual.cobro -= getPago.valor; // devolvemos el cobro de la caja a su estado normal
+    }
+
     cajaActual.caja_final -= getPago.valor; // devolvemos la caja final a su estado normal
 
     clienteModel.status = true; // devolvemos el estatus al cliente por si al caso ya el pago anterior habia puesto su status en false
@@ -213,14 +247,21 @@ const updatePago = async (req = request, res = response) => {
     getCredito.abonos += valor; // se actualiza los abonos del credito
 
     getRuta.total_cobrado += valor; // se actualiza los abonos totales de la ruta
+    getRuta.cartera -= valor;
 
-    cajaActual.cobro += valor;
+    if(queryFecha[0] === getCredito.fecha_inicio){
+      cajaActual.extra += valor;
+    }else{
+      cajaActual.cobro += valor;
+    }
+
     cajaActual.caja_final += valor;
 
     if (getCredito.saldo === 0) {
       // si entra a esta condicion es porque ya el saldo quedo en 0 por lo tanto el estatus del credito debe pasar a false lo mismo con el status del cliente
       getCredito.status = false;
       clienteModel.status = false;
+      getRuta.clientes_activos -= 1;
     };
 
     // ya realizadas todas la operaciones guardamos los cambios realizados
@@ -258,10 +299,19 @@ const eliminarPago = async( req = request, res = response ) => {
 
     // regresar todo como esstaba
     ruta.total_cobrado -= pago.valor;
+    if(credito.status === false){
+      ruta.clientes_activos += 1
+    }
     credito.saldo += pago.valor;
     credito.abonos -= pago.valor;
     credito.pagos = credito.pagos.filter(creditoPago => creditoPago !== idPago);
-    cajaActual.cobro -= pago.valor;
+
+    if(credito.fecha_inicio === fecha){
+      cajaActual.extra -= pago.valor;
+    }else{
+      cajaActual.cobro -= pago.valor;
+    }
+
     cajaActual.caja_final -= pago.valor;
 
     if(credito.saldo > 0){
