@@ -145,7 +145,7 @@ const adminLogin = async(req = request, res = response) => {
     if(!user){
       return res.status(404).json({
         ok: false,
-        msg: `No existe el usuarios ${username}`
+        msg: `No existe el usuario ${username}`
       })
     }
 

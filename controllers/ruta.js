@@ -38,28 +38,17 @@ const addRuta = async (req = request, res = response) => {
 const getRutas = async (req = request, res = response) => {
   try {
 
-    const { limite = 5, desde = 0, estado } = req.query;
-    let estadoRuta;
+    const { rutas: rutasAdmin } = req.usuario;
+    let rutasDelAdmin = [];
 
-    if (estado.toLowerCase() === 'true') {
-      estadoRuta = true;
-    }
-
-    if (estado.toLowerCase() === 'false') {
-      estadoRuta = false;
-    }
-
-    const [total, rutas] = await Promise.all([
-      RutaModel.countDocuments({ estado: estadoRuta }),
-      RutaModel.find({ estado: estadoRuta })
-        .skip(Number(desde))
-        .limit(Number(limite))
-    ])
+    rutasAdmin.forEach( async(ruta) => {
+      let rutaEncontrada = await RutaModel.findById(ruta._id);
+      rutasDelAdmin.push(rutaEncontrada);
+    })
 
     return res.status(200).json({
       ok: true,
-      total,
-      rutas
+      rutas: rutasDelAdmin
     })
 
     // const { all = false } = req.query;

@@ -59,7 +59,7 @@ router.put('/add-empleado/:idRuta', [
   validarCampos
 ], addEmpleado); 
 
-router.patch('/close/:idRuta', [
+router.put('/close/:idRuta', [
   validarJWT,
   check('idRuta', 'No es un id valido').isMongoId(),
   check('idRuta').custom(validarRutaById),
@@ -67,7 +67,7 @@ router.patch('/close/:idRuta', [
   validarCampos
 ], closeRuta);
 
-router.patch('/open/:idRuta', [
+router.put('/open/:idRuta', [
   validarJWT,
   esSuperAdmin,
   check('idRuta', 'No es un id valido').isMongoId(),

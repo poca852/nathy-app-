@@ -13,6 +13,7 @@ const validarJWT = async( req, res, next ) => {
         // leer el usuario que corresponde al uid
         const usuario = await UsuarioModel.findById( uid )
             .populate('rol', 'rol')
+            .populate('rutas')
         
         if( !usuario ) {
             return res.status( 401 ).json({
