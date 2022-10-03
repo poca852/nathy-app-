@@ -1,4 +1,5 @@
 const { request, response } = require("express");
+const Caja = require("../class/Caja");
 const { CajaModel } = require('../models');
 
 const getCaja = async (req = request, res = response) => {
@@ -41,7 +42,30 @@ const getCaja = async (req = request, res = response) => {
 
 }
 
+const getCajasForAdmin = async( req = request, res = response) => {
+  try {
+
+    const { limite = 5, desde = 0 } = req.query;
+    const { ruta } = req.params;
+
+    const cajas = await CajaModel.find({ruta})
+
+    res.status(200).json(
+      cajas.reverse().splice(Number(desde),Number(limite))
+    )
+
+    
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 module.exports = {
   // postCaja,
-  getCaja
+  getCaja,
+  getCajasForAdmin
 }

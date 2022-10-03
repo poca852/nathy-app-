@@ -41,10 +41,11 @@ const getRutas = async (req = request, res = response) => {
     const { rutas: rutasAdmin } = req.usuario;
     let rutasDelAdmin = [];
 
-    rutasAdmin.forEach( async(ruta) => {
-      let rutaEncontrada = await RutaModel.findById(ruta._id);
-      rutasDelAdmin.push(rutaEncontrada);
-    })
+    for (const ruta of rutasAdmin) {
+      let query = await RutaModel.findById(ruta._id);
+      rutasDelAdmin.push(query);
+    }
+
 
     return res.status(200).json({
       ok: true,

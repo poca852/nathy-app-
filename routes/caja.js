@@ -1,11 +1,15 @@
 const {Router} = require('express');
 const {check} = require('express-validator');
-const { getCaja } = require('../controllers/caja');
+const { getCaja, getCajasForAdmin } = require('../controllers/caja');
 const { validarRutaById } = require('../helpers');
 
 const {validarJWT, validarCampos} = require('../middlewares/');
 
 const router = Router();
+
+router.get('/admin/:ruta', [
+  validarJWT,
+], getCajasForAdmin)
 
 // get caja
 router.get('/:idRuta', [
