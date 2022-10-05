@@ -79,18 +79,16 @@ const putUsuarios = async(req = request, res = response) => {
   const { _id, password, ...resto } = req.body;
 
   try {
-    
 
     if( password ){
       const salt = bcryptjs.genSaltSync();
       resto.password = bcryptjs.hashSync(password, salt);
     }
 
-    const usuario = await UserModel.findByIdAndUpdate(id, resto, {new: true})
-
+    const usuario = await UsuarioModel.findByIdAndUpdate(id, {...resto}, {new: true})
     res.status(200).json({
       ok: true,
-      usuario
+      user: usuario
     })
 
 
