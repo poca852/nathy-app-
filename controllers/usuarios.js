@@ -1,11 +1,11 @@
 const { request, response } = require("express");
 const bcryptjs = require('bcryptjs');
-const { UsuarioModel, RolModel } = require("../models");
+const { UsuarioModel, RolModel, RutaModel } = require("../models");
 
 const postUsuarios = async(req=request, res=response) => {
   
   // extraemos la data que viene el body
-  const {username, password, nombre, rol} = req.body;
+  const {username, password, nombre, rol, ruta} = req.body;
  
   try {
 
@@ -14,7 +14,18 @@ const postUsuarios = async(req=request, res=response) => {
     // encriptar la contraseña
     const salt = bcryptjs.genSaltSync();
     usuario.password = bcryptjs.hashSync(password, salt);
-    
+
+    if(ruta){
+      const validarRuta = await RutaModel.findById(ruta);
+      if(!validarRuta){
+        return res.status(400).json({
+          ok: false,
+          msg: 'La ruta no es valida'
+        })
+      }
+    }
+
+    usuario.ruta = ruta;
     // guardamos el usuario
     await usuario.save();
     
