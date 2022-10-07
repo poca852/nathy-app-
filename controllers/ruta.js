@@ -10,6 +10,9 @@ const { RutaModel,
 const addRuta = async (req = request, res = response) => {
 
   try {
+
+    const admin = await UsuarioModel.findById(req.usuario.id);
+
     const { nombre,
       ciudad,
       ingresar_gastos_cobrador } = req.body;
@@ -20,6 +23,9 @@ const addRuta = async (req = request, res = response) => {
       ciudad,
       ingresar_gastos_cobrador
     });
+
+    admin.rutas.push(ruta.id);
+    await admin.save();
 
     return res.status(201).json({
       ok: true,
@@ -139,6 +145,30 @@ const actualizarRuta = async (req = request, res = response) => {
     res.status(500).json({
       ok: false,
       msg: "hable con el administrador"
+    })
+  }
+}
+
+const deleteRuta = async(req = request, res = response) => {
+  try {
+
+    const admin = await UsuarioModel.findById(req.usuario.id);
+    const { idRuta } = req.params;
+
+    await RutaModel.findByIdAndDelete(idRuta);
+
+    admin.rutas = admin.rutas.filter(ruta => ruta !== idRuta);
+    await admin.save();
+
+    res.json({
+      ok: true
+    })
+    
+  } catch (error) {
+    console.log(erro)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
     })
   }
 }
@@ -309,5 +339,6 @@ module.exports = {
   openRuta,
   getRutas,
   addRutaAdmin,
-  addEmpleado
+  addEmpleado,
+  deleteRuta
 }

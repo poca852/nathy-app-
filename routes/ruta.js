@@ -9,7 +9,8 @@ const { getRutaById,
         getRutas, 
         addRutaAdmin, 
         addRuta, 
-        addEmpleado} = require('../controllers/ruta');
+        addEmpleado,
+        deleteRuta} = require('../controllers/ruta');
 
 // helpers
 const { validarUsuarioById, 
@@ -85,5 +86,13 @@ router.put('/add-ruta-admin/:idRuta', [
   check('idAdmin').custom(validarUsuarioById),
   validarCampos
 ], addRutaAdmin)
+
+router.delete('/delete/:idRuta', [
+  validarJWT,
+  esSuperAdmin,
+  check('idRuta', 'no es un id valido').isMongoId(),
+  check('idRuta').custom(validarRutaById),
+  validarCampos
+], deleteRuta)
 
 module.exports = router;
