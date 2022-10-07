@@ -157,7 +157,7 @@ const deleteRuta = async(req = request, res = response) => {
 
     await RutaModel.findByIdAndDelete(idRuta);
 
-    admin.rutas = admin.rutas.filter(ruta => ruta !== idRuta);
+    admin.rutas = admin.rutas.filter(ruta => ruta._id !== idRuta);
     await admin.save();
 
     res.json({
