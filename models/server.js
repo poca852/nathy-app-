@@ -22,7 +22,8 @@ class Server {
       retiros: '/api/retiros',
       ruta: '/api/rutas',
       roles: '/api/roles',
-      buscar: '/api/buscar'
+      buscar: '/api/buscar',
+      pruebas: '/api/test'
     }
 
     // conectar a base de datos
@@ -69,6 +70,7 @@ class Server {
     this.app.use(this.paths.roles, require('../routes/rol'));
     this.app.use(this.paths.lista_gastos, require('../routes/listaGasto'));
     this.app.use(this.paths.buscar, require('../routes/buscar'));
+    this.app.use(this.paths.pruebas, require('../routes/pruebas'));
   }
 
   listen(){
