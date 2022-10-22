@@ -74,7 +74,10 @@ const getCreditos = async (req = request, res = response) => {
 
     const creditos = await CreditoModel.find({ruta: idRuta, status})
       .populate('cliente')
-      .populate('pagos')
+      .populate('pagos');
+
+
+    
 
     return res.status(200).json({
       ok: true,
