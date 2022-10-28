@@ -76,6 +76,13 @@ const getCreditos = async (req = request, res = response) => {
       .populate('cliente')
       .populate('pagos');
 
+    // Esto se debe habilitar para mañana 
+    // const filterCreditos = creditos.sort((a,b) => {
+    //   if(a.turno > b.turno) return 1;
+    //   if(b.turno > a.turno) return -1;
+    //   return 0;
+    // })
+
 
     
 

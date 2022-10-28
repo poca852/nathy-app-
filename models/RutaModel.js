@@ -92,7 +92,7 @@ const RutaModel = new Schema({
   },
 
   turno: {
-    typer: Number,
+    type: Number,
     default: 0
   }
 

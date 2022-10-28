@@ -62,6 +62,7 @@ const addPago = async (req = request, res = response) => {
 
     const { valor, fecha, idRuta } = req.body;
     const { idCredito } = req.params;
+    // const {ruta: idRuta} = req.usuario;
 
     const query = fecha.split(' ');
 
@@ -97,6 +98,7 @@ const addPago = async (req = request, res = response) => {
     credito.ultimo_pago = query[0];
     credito.abonos += valor;
     credito.saldo -= valor;
+    credito.turno = ruta.turno;
 
     // si el saldo del credito despues de hacer el pago es 0 tenemos que cambiar el status del credito y del cliente
     if (credito.saldo === 0) {
@@ -110,6 +112,7 @@ const addPago = async (req = request, res = response) => {
     // actualizamos la ruta con el total_cobrado
     ruta.total_cobrado += valor;
     ruta.cartera -= valor;
+    ruta.turno += 1;
     
     // actualizar la caja
     if(calcularExtra(fecha, credito.fecha_inicio)){

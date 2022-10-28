@@ -201,10 +201,19 @@ const closeRuta = async (req = request, res = response) => {
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const [ruta, caja] = await Promise.all([
+    const [ruta, caja, allCreditos] = await Promise.all([
       RutaModel.findById(idRuta),
-      CajaModel.findOne({ruta: idRuta, fecha})
+      CajaModel.findOne({ruta: idRuta, fecha}),
+      CreditoModel.find({ruta: idRuta, status: true})
     ])
+
+    const creditosPendientes = allCreditos.filter(credito => credito.ultimo_pago !== fecha);
+
+    for (const credito of creditosPendientes) {
+      credito.turno = ruta.turno;
+      await credito.save()
+      ruta.turno += 1;
+    }
 
     // cerramos la ruta
     ruta.status = false;
@@ -288,6 +297,7 @@ const openRuta = async (req = request, res = response) => {
     ruta.status = true;
     ruta.ultima_apertura = fecha;
     ruta.clientes_activos = total_clientes
+    ruta.turno = 1;
     await ruta.save();
 
 
