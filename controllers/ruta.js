@@ -1,4 +1,5 @@
 const { request, response } = require("express");
+const actualizarCaja = require("../helpers/update-caja");
 
 // models
 const { RutaModel,
@@ -201,10 +202,20 @@ const closeRuta = async (req = request, res = response) => {
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const [ruta, caja] = await Promise.all([
+    const [ruta, caja, clientes] = await Promise.all([
       RutaModel.findById(idRuta),
-      CajaModel.findOne({ruta: idRuta, fecha})
+      CajaModel.findOne({ruta: idRuta, fecha}),
+      CreditoModel.find({ruta: idRuta, status: true})
     ])
+
+    const creditosPendientes = clientes.filter(credito => credito.ultimo_pago !== fecha);
+    console.log(creditosPendientes)
+
+    creditosPendientes.forEach(async(credito) => {
+      credito.turno = ruta.turno;
+      ruta.turno += 1;
+      await credito.save()
+    })
 
     // cerramos la ruta
     ruta.status = false;
@@ -232,62 +243,36 @@ const openRuta = async (req = request, res = response) => {
     const { fecha } = req.body;
 
     // ===== CREAMOS UNA CAJA ======= \\
-    const [creditosActivos, total_clientes, ruta, cajas] = await Promise.all([
-      CreditoModel.find({ ruta: idRuta, status: true }),
-      CreditoModel.countDocuments({ ruta: idRuta, status: true }),
+    const [ruta, clientes_pendientes] = await Promise.all([
       RutaModel.findById(idRuta)
-        .populate('ultima_caja'),
-      CajaModel.find({ruta: idRuta})
+                .populate('ultima_caja'),
+      CreditoModel.countDocuments({ruta: idRuta, status: true})
     ])
 
-    let pretendido = 0;
-    creditosActivos.forEach(credito => {
-      pretendido += credito.valor_cuota
-    })
-
-    let bodyCaja; // ESTE ES EL OBJETO QUE GUARDAREMOS EN LA NUEVA CAJA
 
     // Validamos que hayan cajas previas antes de crear la nueva caja 
+    let caja;
     if (ruta.ultima_caja) {
-      bodyCaja = {
+      caja = await CajaModel.create({
         base: ruta.ultima_caja.caja_final,
         caja_final: ruta.ultima_caja.caja_final,
-        total_clientes,
-        clientes_pendientes: total_clientes,
-        pretendido,
         ruta: idRuta,
+        clientes_pendientes,
         fecha
-      }
-    }
-
-    // este caso deria cuando la ruta es nueva y no han generado ninguna caja
-    if(cajas.length === 0){
-      bodyCaja = {
+      })
+    }else{
+      caja = await CajaModel.create({
         fecha,
         ruta: idRuta
-      }
+      })
     }
 
-    // este caso seria para los que ya tienen cajas guardadas pero con el formato antiguo
-    if(cajas.length >= 1){
-      bodyCaja = {
-        base: cajas[cajas.length - 1].caja_final,
-        caja_final: cajas[cajas.length - 1].caja_final,
-        total_clientes,
-        clientes_pendientes: total_clientes,
-        pretendido,
-        ruta: idRuta,
-        fecha
-      }
-    }
-
-
-    const caja = await CajaModel.create(bodyCaja);
+    await actualizarCaja(idRuta, fecha);
 
     ruta.caja_actual = caja.id;
     ruta.status = true;
     ruta.ultima_apertura = fecha;
-    ruta.clientes_activos = total_clientes
+    ruta.turno = 1;
     await ruta.save();
 
 

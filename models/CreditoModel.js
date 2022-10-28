@@ -70,6 +70,10 @@ const CreditoModel = new Schema({
 
   notas: {
     type: String
+  },
+
+  turno: {
+    type: Number,
   }
 });
 

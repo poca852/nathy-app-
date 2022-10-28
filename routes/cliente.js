@@ -27,8 +27,6 @@ router.post('/', [
   check('nombre', 'El nombre es obligatorio').not().isEmpty().isLength({min: 4}),
   check('ciudad', 'La ciudad es obligatoria').not().isEmpty().isLength({min: 4}),
   check('direccion', 'La direccion es obligatoria').not().isEmpty().isLength({min: 4}),
-  check('idRuta', 'no es un id valido').isMongoId(),
-  check('idRuta').custom(validarRutaById),
   validarCampos
 ], addCliente);
 
