@@ -1,6 +1,7 @@
 const { request, response } = require("express");
 const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
 const { generarCredito, updatedCredito } = require("../helpers/creditos");
+const { getCredito } = require("../class/credito");
 
 const addCredito = async (req = request, res = response) => {
 
@@ -63,6 +64,16 @@ const addCredito = async (req = request, res = response) => {
       msg: 'Hable con el administrador'
     })
   }
+}
+
+const creditoManual = async(req = request, res = response) => {
+  const body = req.body;
+  const { ruta } = req.usuario;
+  const {idCliente: cliente} = req.params;
+
+  res.status(200).json({
+    credito: getCredito(body, ruta, cliente)
+  })
 }
 
 const getCreditos = async (req = request, res = response) => {
@@ -245,4 +256,5 @@ module.exports = {
   getCreditoById,
   actualizarCredito,
   eliminarCredito,
+  creditoManual,
 }
