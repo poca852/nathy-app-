@@ -1,4 +1,6 @@
 const { request, response } = require("express");
+const actualizarRuta = require('../helpers/update-ruta');
+const actualizarCaja = require('../helpers/update-caja');
 
 const { RetiroModel, 
         RutaModel, 
@@ -10,8 +12,9 @@ const addRetiro = async (req = request, res = response) => {
 
   const { fecha,
           valor,
-          nota,
-          idRuta } = req.body;
+          nota} = req.body;
+
+    const {ruta: idRuta} = req.usuario;
 
     const retiro = await RetiroModel.create({
       fecha,
@@ -20,21 +23,13 @@ const addRetiro = async (req = request, res = response) => {
       ruta: idRuta
     });
 
-    const [rutaModel, cajaActual] = await Promise.all([
-      RutaModel.findById(idRuta),
-      CajaModel.findOne({ruta: idRuta, fecha})
-    ])
-
-    rutaModel.retiros += valor;
-    cajaActual.retiro += valor;
-    cajaActual.caja_final -= valor;
-    await rutaModel.save();
-    await cajaActual.save();
+    await actualizarCaja(idRuta, fecha);
+    await actualizarRuta(idRuta);
 
     return res.status(201).json({
       ok: true,
       retiro
-    })
+    });
 
   } catch (error) {
     console.log(error)

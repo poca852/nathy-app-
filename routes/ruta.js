@@ -21,6 +21,7 @@ const { validarUsuarioById,
 const { validarJWT, 
         validarCampos, 
         esSuperAdmin} = require('../middlewares/');
+const { tieneRol } = require('../middlewares/validar-roles');
 
 const router = Router();
 

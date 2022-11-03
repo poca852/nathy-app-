@@ -23,7 +23,8 @@ class Server {
       ruta: '/api/rutas',
       roles: '/api/roles',
       buscar: '/api/buscar',
-      pruebas: '/api/test'
+      pruebas: '/api/test',
+      seed: '/api/seed'
     }
 
     // conectar a base de datos
@@ -71,6 +72,7 @@ class Server {
     this.app.use(this.paths.lista_gastos, require('../routes/listaGasto'));
     this.app.use(this.paths.buscar, require('../routes/buscar'));
     this.app.use(this.paths.pruebas, require('../routes/pruebas'));
+    this.app.use(this.paths.seed, require('../routes/seed'));
   }
 
   listen(){

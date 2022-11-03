@@ -2,6 +2,8 @@ const { request, response } = require("express");
 const { CreditoModel, ClienteModel, PagoModel, RutaModel, CajaModel } = require('../models');
 const moment = require('moment');
 const { calcularExtra } = require("../helpers/caja");
+const actualizarRuta = require("../helpers/update-ruta");
+const actualizarCaja = require("../helpers/update-caja");
 moment.tz.setDefault('America/Guatemala');
 
 // getPagos
@@ -60,20 +62,16 @@ const addPago = async (req = request, res = response) => {
   
   try {
 
-    const { valor, fecha, idRuta } = req.body;
+    const { valor, fecha } = req.body;
     const { idCredito } = req.params;
-    // const {ruta: idRuta} = req.usuario;
+    const { ruta: idRuta } = req.usuario;
 
-    const query = fecha.split(' ');
+    const queryFecha = fecha.split(' ');
 
-    const [ ruta, credito, cajaActual ] = await Promise.all([
+    const [ ruta, credito ] = await Promise.all([
       RutaModel.findById(idRuta),
       CreditoModel.findById(idCredito)
-        .populate('cliente', 'id'),
-      CajaModel.findOne({
-        $or: [{fecha: query[0]}],
-        $and: [{ruta: idRuta}] 
-      })
+        .populate('cliente', 'id')
     ])
 
     // verifico que el valor sea menor al saldo del credito 
@@ -90,12 +88,13 @@ const addPago = async (req = request, res = response) => {
       fecha,
       ruta: idRuta,
       credito: idCredito,
-      cliente: credito.cliente.id
+      cliente: credito.cliente.id,
+      turno: ruta.turno
     })
 
     // se agrega el pago al arreglo de pagos que tiene el credito y aparte de eso se hacen las operaciones en los campos de saldo y abonos
     credito.pagos.unshift(newPago);
-    credito.ultimo_pago = query[0];
+    credito.ultimo_pago = queryFecha[0];
     credito.abonos += valor;
     credito.saldo -= valor;
     credito.turno = ruta.turno;
@@ -106,37 +105,12 @@ const addPago = async (req = request, res = response) => {
       ruta.clientes_activos -= 1;
       await ClienteModel.findByIdAndUpdate(credito.cliente.id, { status: false })
     }
-
-    // finalmente guardamos los cambios en credito
     
-    // actualizamos la ruta con el total_cobrado
-    ruta.total_cobrado += valor;
-    ruta.cartera -= valor;
+    await actualizarRuta(idRuta);
+    await actualizarCaja(idRuta, queryFecha[0])
     ruta.turno += 1;
-    
-    // actualizar la caja
-    if(calcularExtra(fecha, credito.fecha_inicio)){
-      cajaActual.extra += valor;
-    }else{
-
-      if(valor > credito.valor_cuota){
-        let extra = valor - credito.valor_cuota;
-        cajaActual.cobro += credito.valor_cuota;
-        cajaActual.extra += extra;
-      }else{
-        cajaActual.cobro += valor;
-      }
-      
-      cajaActual.clientes_pendientes -= 1;
-
-    }
-
-    cajaActual.caja_final += valor;
-
-    
-    await credito.save();
     await ruta.save();
-    await cajaActual.save()
+    await credito.save();
 
     return res.status(201).json({
       ok: true,

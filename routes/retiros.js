@@ -19,8 +19,6 @@ router.post('/', [
   validarJWT,
   check('valor', 'El valor es obligatorio').isNumeric(),
   check('fecha', 'La fecha es obligatoria').not().isEmpty(),
-  check('idRuta', 'No es un id valido').isMongoId(),
-  check('idRuta').custom(validarRutaById),
   validarCampos
 ], addRetiro);
 

@@ -2,54 +2,37 @@ const { request, response } = require("express");
 const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
 const { generarCredito, updatedCredito } = require("../helpers/creditos");
 const { getCredito } = require("../class/credito");
+const actualizarRuta = require('../helpers/update-ruta');
+const actualizarCaja = require("../helpers/update-caja");
 
 const addCredito = async (req = request, res = response) => {
 
   try {
 
-  const { idCliente } = req.params;
-    /* datos que necesita esta body valor_credito, 
-        valor_credito, 
-  interes, 
-  total_cuotas, 
-  notas, 
-  fecha, 
-  idCliente,
-  idRuta*/
+    const { idCliente } = req.params;
+    const { ruta } = req.usuario;
     const body = req.body;
-
-    // creamos la data que hace falta guardar
-    const dataDelCredito = generarCredito(body);
-
-    // creamos el credito
-    const credito = await CreditoModel.create({
-      ...dataDelCredito,
-      cliente: idCliente
-    });
-
-    const [clienteModel, rutaModel, cajaActual] = await Promise.all([
+    
+    const [clienteModel] = await Promise.all([
       ClienteModel.findById(idCliente),
-      RutaModel.findById(body.idRuta),
-      CajaModel.findOne({ruta: body.idRuta, fecha: body.fecha})
     ])
+    
+    const credito = await CreditoModel.create({
+      ...generarCredito(body),
+      cliente: idCliente,
+      ruta,
+    });
 
     // actualizamos el status del cliente, y actualizaos el arreglo de creditos del cliente
     clienteModel.status = true;
     clienteModel.creditos.unshift(credito)
     await clienteModel.save();
 
-    // actualizamos el camp total_prestado e incrementamos la cartera de la ruta
-    rutaModel.total_prestado += body.valor_credito;
-    rutaModel.cartera += dataDelCredito.total_pagar;
-    rutaModel.clientes_activos += 1;
-    await rutaModel.save();
+    //  actualizar ruta
+    await actualizarRuta(ruta)
 
     // actualizamos la caja
-    cajaActual.prestamo += body.valor_credito;
-    cajaActual.caja_final -= body.valor_credito;
-    cajaActual.renovaciones += 1;
-    cajaActual.total_clientes += 1;
-    await cajaActual.save();
+    await actualizarCaja(ruta, body.fecha)
 
 
     return res.status(201).json({

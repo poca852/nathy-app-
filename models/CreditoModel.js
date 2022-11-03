@@ -73,7 +73,7 @@ const CreditoModel = new Schema({
   },
 
   turno: {
-    type: Number
+    type: Number,
   }
 });
 

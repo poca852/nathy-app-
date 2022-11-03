@@ -54,35 +54,24 @@ const addCliente = async (req = request, res = response) => {
 
   try {
     
-    const { nombre, 
-            dpi, 
-            ciudad, 
-            direccion, 
-            alias, 
-            telefono, 
-            idRuta } = req.body;
+    const body = req.body;
+    const { ruta } = req.usuario;
 
     // verifico que el dpi ya existe en dicha ruta
-    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ ruta: idRuta, dpi });
+    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ ruta, dpi: body.dpi });
     if (verificarSiExisteClienteEnRuta) {
       return res.status(400).json({
         ok: false,
         msg: `El cliente ${verificarSiExisteClienteEnRuta.nombre} ya existe en esta ruta`
       })
-    }
+    };
 
-    const nuevoCliente = await ClienteModel.create({
-      nombre,
-      dpi,
-      ciudad,
-      direccion,
-      alias,
-      telefono,
-      ruta: idRuta
-    });
+    const [nuevoCliente, rutaModel] = await Promise.all([
+      ClienteModel.create({...body, ruta}),
+      RutaModel.findById(ruta)
+    ])
 
     // actualizamos el numero de clientes de la ruta
-    const rutaModel = await RutaModel.findById(idRuta);
     rutaModel.clientes += 1;
     await rutaModel.save();
 

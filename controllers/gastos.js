@@ -2,6 +2,8 @@ const { request, response } = require("express");
 const { GastoModel, RutaModel, CajaModel } = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
+const actualizarCaja = require('../helpers/update-caja');
+const actualizarRuta = require('../helpers/update-ruta');
 
 const getGastos = async (req = request, res = response) => {
 
@@ -60,19 +62,21 @@ const addGasto = async (req = request, res = response) => {
       ruta: idRuta
     });
 
-    const [ruta, cajaActual] = await Promise.all([
-      RutaModel.findById(idRuta),
-      CajaModel.findOne({ruta: idRuta, fecha})
-    ])
+    // const [ruta, cajaActual] = await Promise.all([
+    //   RutaModel.findById(idRuta),
+    //   CajaModel.findOne({ruta: idRuta, fecha})
+    // ])
 
-    // actualizamos la ruta
-    ruta.gastos += valor;
-    await ruta.save();
+    // // actualizamos la ruta
+    // ruta.gastos += valor;
+    // await ruta.save();
 
-    // actualizamos la caja
-    cajaActual.gasto += valor;
-    cajaActual.caja_final -= valor;
-    await cajaActual.save();
+    // // actualizamos la caja
+    // cajaActual.gasto += valor;
+    // cajaActual.caja_final -= valor;
+    // await cajaActual.save();
+    await actualizarCaja(idRuta, fecha);
+    await actualizarRuta(idRuta);
 
     return res.status(201).json({
       ok: true,
