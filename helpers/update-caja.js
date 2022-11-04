@@ -1,16 +1,16 @@
 const {CajaModel, CreditoModel, PagoModel, InversionModel, GastoModel, RetiroModel} = require('../models')
 
-const actualizarCaja = async (ruta, fecha) => {
-  if(!ruta || !fecha) throw new Error('la ruta y la fecha es obligatoria');
+const actualizarCaja = async (ruta, fecha_inicio) => {
+  if(!ruta || !fecha_inicio) throw new Error('la ruta y la fecha es obligatoria');
   const [caja, allCreditos, todayCreditos, pagos, inversiones, gastos, retiros, totalClientesPagos] = await Promise.all([
-    CajaModel.findOne({ruta, fecha}),
+    CajaModel.findOne({ruta, fecha: fecha_inicio}),
     CreditoModel.find({ruta, status: true}),
-    CreditoModel.find({ruta, fecha_inicio: fecha}),
-    PagoModel.find({ruta, fecha: new RegExp(fecha, 'i')}),
-    InversionModel.find({ruta, fecha}),
-    GastoModel.find({ruta, fecha}),
-    RetiroModel.find({ruta, fecha}),
-    PagoModel.countDocuments({ruta, fecha: new RegExp(fecha, 'i')})
+    CreditoModel.find({ruta, fecha_inicio}),
+    PagoModel.find({ruta, fecha: new RegExp(fecha_inicio, 'i')}),
+    InversionModel.find({ruta, fecha: fecha_inicio}),
+    GastoModel.find({ruta, fecha: fecha_inicio}),
+    RetiroModel.find({ruta, fecha: fecha_inicio}),
+    PagoModel.countDocuments({ruta, fecha: new RegExp(fecha_inicio, 'i')})
   ]);
 
 

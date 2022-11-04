@@ -209,7 +209,6 @@ const closeRuta = async (req = request, res = response) => {
     ])
 
     const creditosPendientes = clientes.filter(credito => credito.ultimo_pago !== fecha);
-    console.log(creditosPendientes)
 
     creditosPendientes.forEach(async(credito) => {
       credito.turno = ruta.turno;

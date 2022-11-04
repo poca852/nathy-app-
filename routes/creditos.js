@@ -31,7 +31,7 @@ router.post('/:idCliente', [
         check('valor_credito', 'Monto Incorrecto').isNumeric(),
         check('interes', 'El interes debe ser un numero').isNumeric(),
         check('total_cuotas', 'El numero de cuotas debe ser un numero').isNumeric(),
-        check('fecha', 'fecha obligatoria').not().isEmpty(),
+        check('fecha_inicio', 'fecha obligatoria').not().isEmpty(),
         validarCampos
 ], addCredito);
 

@@ -3,7 +3,7 @@ const generarCredito = ( {
   interes, 
   total_cuotas, 
   notas, 
-  fecha, 
+  fecha_inicio, 
 } ) => {
 
   let total_pagar = Math.ceil((valor_credito * interes) / 100 + valor_credito);
@@ -16,7 +16,7 @@ const generarCredito = ( {
     total_cuotas,
     interes,
     saldo: total_pagar,
-    fecha_inicio: fecha,
+    fecha_inicio,
     notas
   }
 

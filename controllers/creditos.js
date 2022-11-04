@@ -32,7 +32,7 @@ const addCredito = async (req = request, res = response) => {
     await actualizarRuta(ruta)
 
     // actualizamos la caja
-    await actualizarCaja(ruta, body.fecha)
+    await actualizarCaja(ruta, body.fecha_inicio)
 
 
     return res.status(201).json({
@@ -54,9 +54,20 @@ const creditoManual = async(req = request, res = response) => {
   const { ruta } = req.usuario;
   const {idCliente: cliente} = req.params;
 
-  res.status(200).json({
-    credito: getCredito(body, ruta, cliente)
-  })
+  try{
+    const credito = await getCredito(body, ruta, cliente)
+    return res.status(201).json({
+      credito
+    })
+  }catch(err){
+    console.log(err)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+
+  
 }
 
 const getCreditos = async (req = request, res = response) => {
