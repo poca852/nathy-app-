@@ -241,6 +241,8 @@ const updatePago = async (req = request, res = response) => {
     await cajaActual.save();
     await clienteModel.save();
 
+    await actualizarRuta(idRuta);
+
     return res.status(200).json({
       ok: true,
       getPago
