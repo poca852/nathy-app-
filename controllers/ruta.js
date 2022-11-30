@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { actualizarCaja, actualizarRuta } = require("../helpers");
+const { actualizarCaja, actualizarRuta: updateRuta } = require("../helpers");
 
 // models
 const { RutaModel,
@@ -222,7 +222,7 @@ const closeRuta = async (req = request, res = response) => {
     ruta.ultima_caja = caja.id;
     
     await ruta.save()
-    await actualizarRuta(idRuta);
+    await updateRuta(idRuta);
 
     return res.status(200).json({
       ok: true
@@ -274,7 +274,7 @@ const openRuta = async (req = request, res = response) => {
     ruta.ultima_apertura = fecha;
     ruta.turno = 1;
     await ruta.save();
-    await actualizarRuta(idRuta);
+    await updateRuta(idRuta);
 
 
     return res.status(200).json({
