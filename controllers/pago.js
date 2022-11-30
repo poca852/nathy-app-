@@ -228,7 +228,6 @@ const updatePago = async (req = request, res = response) => {
     // ya realizadas todas la operaciones guardamos los cambios realizados
     await getCredito.save();
     await getPago.save();
-    await getRuta.save();
     await cajaActual.save();
     await clienteModel.save();
 
