@@ -2,8 +2,7 @@ const { request, response } = require("express");
 const { GastoModel, RutaModel, CajaModel } = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
-const actualizarCaja = require('../helpers/update-caja');
-const actualizarRuta = require('../helpers/update-ruta');
+const { actualizarCaja, actualizarRuta } = require('../helpers');
 
 const getGastos = async (req = request, res = response) => {
 

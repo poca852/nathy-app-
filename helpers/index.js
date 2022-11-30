@@ -1,11 +1,11 @@
 const dbValidators = require('./db-validators');
 const generarJWT = require('./generar-jwt');
-const updateCaja = require('./update-caja');
-const updateRuta = require('./update-ruta');
+const actualizarCaja = require('./update-caja');
+const actualizarRuta = require('./update-ruta');
 
 module.exports = {
   ...dbValidators,
   ...generarJWT,
-  updateCaja,
-  updateRuta
+  actualizarCaja,
+  actualizarRuta
 }
