@@ -1,6 +1,6 @@
 const { request, response } = require("express");
 const Caja = require("../class/Caja");
-const { updateCaja } = require("../helpers");
+const { actualizarCaja } = require("../helpers");
 const { CajaModel } = require('../models');
 
 const getCaja = async (req = request, res = response) => {
@@ -16,7 +16,7 @@ const getCaja = async (req = request, res = response) => {
       })
     }
     // verificar si ya existe una caja con la fecha dada
-    await updateCaja(idRuta, fecha);
+    await actualizarCaja(idRuta, fecha);
     const caja = await CajaModel.findOne({ ruta: idRuta, fecha })
       .populate('ruta')
 
