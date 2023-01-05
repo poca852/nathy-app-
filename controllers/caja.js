@@ -1,7 +1,7 @@
 const { request, response } = require("express");
 const Caja = require("../class/Caja");
 const { actualizarCaja } = require("../helpers");
-const { CajaModel } = require('../models');
+const { CajaModel, CreditoModel } = require('../models');
 
 const getCaja = async (req = request, res = response) => {
 
@@ -66,8 +66,38 @@ const getCajasForAdmin = async( req = request, res = response) => {
   }
 }
 
+const searchDate = async(req = request, res = response) => {
+  const {rutas} = req.usuario;
+  const {fecha} = req.query;
+
+  try {
+
+    let cajas = [];
+
+    for (const ruta of rutas) {
+      let q = await CajaModel.findOne({
+        ruta: ruta.id,
+        fecha
+      })
+        .populate('ruta', ['nombre'])
+
+      cajas.push(q);
+    }
+
+    res.status(200).json(cajas)
+    
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: "Hable con el aministrador"
+    })
+  }
+};
+
 module.exports = {
   // postCaja,
   getCaja,
-  getCajasForAdmin
+  getCajasForAdmin,
+  searchDate
 }
