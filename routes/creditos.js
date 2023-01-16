@@ -5,7 +5,8 @@ const { getCreditos,
         getCreditoById,
         actualizarCredito,
         eliminarCredito, 
-        creditoManual} = require('../controllers/creditos');
+        creditoManual,
+        getCreditoByDate} = require('../controllers/creditos');
         
 const { validarClienteById, 
         validarCreditoById, 
@@ -22,6 +23,8 @@ router.get('/', [
         validarJWT,
         validarCampos
 ], getCreditos);
+
+router.get('/search/date', validarJWT, getCreditoByDate)
 
 // postCreditos
 router.post('/:idCliente', [
@@ -60,8 +63,6 @@ router.put('/:idCredito', [
         validarJWT,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
-        check('idRuta', 'No es un id valido').isMongoId(),
-        check('idRuta').custom(validarRutaById),
         validarCampos
 ], actualizarCredito);
 
@@ -71,11 +72,6 @@ router.delete('/:idCredito', [
         esSuperAdmin,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
-        check('idRuta', 'No es un id valido').isMongoId(),
-        check('idRuta').custom(validarRutaById),
-        check('idCliente', 'No es un id valido').isMongoId(),
-        check('idCliente').custom(validarClienteById),
-        check('fecha', 'La fecha es obligatoria').not().isEmpty(),
         esSuperAdmin
 ], eliminarCredito);
 

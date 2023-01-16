@@ -5,7 +5,7 @@ const dataSeed = {
     estado: true,
     username: 'poca',
     password: '229497',
-    rol: 'ADMIN',
+    rol: 'SUPER_ADMIN',
   },
   roles: ['admin', 'cobrador', 'super_admin'],
   ruta: {

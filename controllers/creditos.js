@@ -2,8 +2,9 @@ const { request, response } = require("express");
 const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
 const { generarCredito, updatedCredito } = require("../helpers/creditos");
 const { getCredito } = require("../class/credito");
-const actualizarRuta = require('../helpers/update-ruta');
-const actualizarCaja = require("../helpers/update-caja");
+const {actualizarRuta, actualizarCaja} = require('../helpers');
+const moment = require('moment');
+moment().format()
 
 const addCredito = async (req = request, res = response) => {
 
@@ -133,25 +134,19 @@ const actualizarCredito = async (req = request, res = response) => {
 
     const { idCredito } = req.params;
 
-    const { _id, 
-            idCliente, 
-            idRuta, 
-            interes, 
+    const { interes, 
             notas, 
-            fecha, 
             total_cuotas,
             valor_credito  } = req.body;
 
-    const [ ruta, credito, caja ] = await Promise.all([
-      RutaModel.findById(idRuta),
+    const [credito] = await Promise.all([
       CreditoModel.findById(idCredito),
-      CajaModel.findOne({ruta: idRuta, fecha}),
     ]);
 
     if(valor_credito){
 
       credito.valor_credito = valor_credito;
-      credito.fecha_inicio = fecha;
+      // credito.fecha_inicio = fecha;
 
       if(interes){
         credito.interes = interes;
@@ -165,12 +160,6 @@ const actualizarCredito = async (req = request, res = response) => {
         credito.notas = notas;
       }
 
-      // regresar todo como estaba
-      ruta.total_prestado -= credito.valor_credito;
-      ruta.cartera -= credito.saldo
-
-      caja.prestamo -= credito.valor_credito;
-      caja.caja_final += credito.valor_credito;
 
       let { total_pagar, valor_cuota } = updatedCredito( credito.valor_credito, 
         credito.interes, 
@@ -181,24 +170,14 @@ const actualizarCredito = async (req = request, res = response) => {
       credito.saldo = total_pagar;
       credito.abonos = 0
 
-      // volver a calular los valores en caja y ruta
-      ruta.total_prestado += valor_credito;
-      ruta.cartera += total_pagar;
-
-      caja.prestamo += valor_credito;
-      caja.caja_final -= valor_credito;
-
-      // guardar todo 
-      await ruta.save();
-      await caja.save();
       await credito.save();
     }
 
+    await actualizarCaja(credito.ruta, credito.fecha_inicio)
+    await actualizarRuta(credito.ruta)
+
     
-    return res.status(200).json({
-      ok: true,
-      credito
-    })
+    return res.status(200).json(true)
 
   } catch (error) {
     console.log(error)
@@ -212,31 +191,42 @@ const actualizarCredito = async (req = request, res = response) => {
 const eliminarCredito = async (req = request, res = response) => {
   try {
     const { idCredito } = req.params;
-    const { fecha, idCliente, idRuta } = req.body;
     
-    const [ruta, credito, cliente, caja] = await Promise.all([
-      RutaModel.findById(idRuta),
-      CreditoModel.findById(idCredito),
-      ClienteModel.findById(idCliente),
-      CajaModel.findOne({ruta: idRuta, fecha})
+    const [credito] = await Promise.all([
+      CreditoModel.findById(idCredito)
     ])
 
-    cliente.status = false;
-    cliente.creditos = cliente.creditos.filter(c => c !== idCredito);
-    ruta.total_prestado -= credito.valor_credito;
-    ruta.cartera -= credito.saldo;
-    caja.prestamo -= credito.valor_credito;
-    caja.caja_final += credito.valor_credito;
+    // actualizar estado del cliente
+    await ClienteModel.findByIdAndUpdate(credito.cliente, {status: false})
 
     await CreditoModel.findByIdAndDelete(idCredito);
 
-    // const 
-    return res.status(200).json({
-      msg: 'Credito eliminado correctamente'
-    })
+    await actualizarCaja(credito.ruta, credito.fecha_inicio);
+    await actualizarRuta(credito.ruta);
+
+    return res.status(200).json(true)
 
   } catch (error) {
     console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const getCreditoByDate = async(req = request, res = response) => {
+  try {
+    let { fecha, ruta } = req.query;
+    const creditos = await CreditoModel.find({
+      $or: [{fecha_inicio: fecha}],
+      $and: [{ruta}]
+    })
+      .populate('cliente')
+
+    return res.status(200).json(creditos)
+  } catch (error) {
+    console.log(error);
     res.status(500).json({
       ok: false,
       msg: 'Hable con el administrador'
@@ -251,4 +241,5 @@ module.exports = {
   actualizarCredito,
   eliminarCredito,
   creditoManual,
+  getCreditoByDate
 }
