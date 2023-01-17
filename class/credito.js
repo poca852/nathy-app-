@@ -1,5 +1,5 @@
 const {CreditoModel, RutaModel, ClienteModel} = require('../models');
-const { updateCaja, updateRuta } = require('../helpers')
+const { actualizarCaja, actualizarRuta } = require('../helpers')
 
 const getCredito = async({valor_credito, total_cuotas, fecha_inicio, valor_cuota, notas}, ruta, cliente) => {
   let interes = ((valor_cuota * total_cuotas) - valor_credito) / valor_credito;
@@ -24,8 +24,8 @@ const getCredito = async({valor_credito, total_cuotas, fecha_inicio, valor_cuota
   clienteDb.creditos.push(credito);
   await clienteDb.save()
 
-  await updateCaja(ruta, fecha_inicio);
-  await updateRuta(ruta);
+  await actualizarCaja(ruta, fecha_inicio);
+  await actualizarRuta(ruta);
 
   return credito;
 
