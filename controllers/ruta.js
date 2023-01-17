@@ -1,5 +1,6 @@
 const { request, response } = require("express");
-const { actualizarCaja, actualizarRuta: updateRuta } = require("../helpers");
+const { actualizarCaja } = require("../helpers");
+const updateRuta = require('../helpers/update-ruta');
 
 // models
 const { RutaModel,
