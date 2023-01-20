@@ -316,6 +316,33 @@ const addRutaAdmin = async (req = request, res = response) => {
       msg: 'Hable con el administrador'
     })
   }
+};
+
+const closeRutaAdmin = async(req = request, res = response) => {
+  try {
+
+    const {id} = req.params;
+
+    const ruta = await RutaModel.findById(id)
+      .populate('caja_actual');
+
+    ruta.status = false;
+    ruta.ultima_caja = ruta.caja_actual._id;
+    ruta.ultimo_cierre = ruta.caja_actual.fecha;  
+    await ruta.save();
+
+    return res.status(200).json({
+      ok: true
+    })
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      error,
+      msg: 'Hable con el administrador'
+    })
+  }
 }
 
 module.exports = {
@@ -327,5 +354,6 @@ module.exports = {
   getRutas,
   addRutaAdmin,
   addEmpleado,
-  deleteRuta
+  deleteRuta,
+  closeRutaAdmin
 }

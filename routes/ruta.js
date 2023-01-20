@@ -10,7 +10,8 @@ const { getRutaById,
         addRutaAdmin, 
         addRuta, 
         addEmpleado,
-        deleteRuta} = require('../controllers/ruta');
+        deleteRuta,
+        closeRutaAdmin} = require('../controllers/ruta');
 
 // helpers
 const { validarUsuarioById, 
@@ -61,6 +62,7 @@ router.put('/add-empleado/:idRuta', [
   validarCampos
 ], addEmpleado); 
 
+// esta es para el cobrador
 router.put('/close/:idRuta', [
   validarJWT,
   check('idRuta', 'No es un id valido').isMongoId(),
@@ -68,6 +70,12 @@ router.put('/close/:idRuta', [
   check('fecha').not().isEmpty(),
   validarCampos
 ], closeRuta);
+
+router.put('/admin/close/:id', [
+  validarJWT,
+  check('id', 'No es un id valido').isMongoId(),
+  validarCampos
+], closeRutaAdmin)
 
 router.put('/open/:idRuta', [
   validarJWT,
