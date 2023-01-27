@@ -188,6 +188,43 @@ const actualizarCredito = async (req = request, res = response) => {
   }
 }
 
+const actualizarTurno = async (req = request, res = response) => {
+  try {
+    const {idCredito} = req.params;
+    const {turno} = req.body;
+    const {ruta} = req.usuario;
+
+    // validamos si ese turno ya existe
+    const [validarTurno, credito] = await Promise.all([
+      CreditoModel.find({
+        ruta,
+        turno
+      }),
+      CreditoModel.findById(idCredito)
+    ])
+
+    if(validarTurno.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        msg: `El turno ${turno} lo tiene ${validarTurno[0].alias}, prueba con otro numero de turno`
+      })
+    };
+
+    credito.turno = turno;
+    await credito.save();
+
+    return res.status(200).json(true)
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 const eliminarCredito = async (req = request, res = response) => {
   try {
     const { idCredito } = req.params;
@@ -241,5 +278,6 @@ module.exports = {
   actualizarCredito,
   eliminarCredito,
   creditoManual,
-  getCreditoByDate
+  getCreditoByDate,
+  actualizarTurno
 }
