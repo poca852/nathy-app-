@@ -26,7 +26,7 @@ router.post('/', async (req = request, res = response) => {
 
 })
 
-router.get('/cobrado', async(req = request, res = reponse) => {
+router.get('/cobrado', async(req = request, res = response) => {
   const {ruta} = req.body;
 
   const pagos = await PagoModel.find({ruta, fecha: new RegExp('07/11/2022', 'i')})
@@ -41,6 +41,11 @@ router.get('/cobrado', async(req = request, res = reponse) => {
     msg: 'prueba',
     cobroReal
   })
+})
+
+router.get('/turno', async(req = request, res = response) => {
+  await CreditoModel.updateMany({status: true}, {turno: 0})
+  return res.status(200).json(true)
 })
 
 module.exports = router;
