@@ -6,7 +6,8 @@ const { getCreditos,
         actualizarCredito,
         eliminarCredito, 
         creditoManual,
-        getCreditoByDate} = require('../controllers/creditos');
+        getCreditoByDate,
+        actualizarTurno} = require('../controllers/creditos');
         
 const { validarClienteById, 
         validarCreditoById, 
@@ -65,6 +66,13 @@ router.put('/:idCredito', [
         check('idCredito').custom(validarCreditoById),
         validarCampos
 ], actualizarCredito);
+
+router.put('/turno/:idCredito', [
+        validarJWT,
+        check('idCredito').custom(validarCreditoById),
+        check('turno', 'El turno debe ser un numero').isInt(),
+        validarCampos
+], actualizarTurno)
 
 // deleteCredito
 router.delete('/:idCredito', [
