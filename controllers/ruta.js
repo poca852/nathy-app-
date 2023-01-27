@@ -203,19 +203,10 @@ const closeRuta = async (req = request, res = response) => {
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const [ruta, caja, clientes] = await Promise.all([
+    const [ruta, caja] = await Promise.all([
       RutaModel.findById(idRuta),
       CajaModel.findOne({ruta: idRuta, fecha}),
-      CreditoModel.find({ruta: idRuta, status: true})
     ])
-
-    const creditosPendientes = clientes.filter(credito => credito.ultimo_pago !== fecha);
-
-    creditosPendientes.forEach(async(credito) => {
-      credito.turno = ruta.turno;
-      ruta.turno += 1;
-      await credito.save()
-    })
 
     // cerramos la ruta
     ruta.status = false;
