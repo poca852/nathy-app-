@@ -88,7 +88,6 @@ const addPago = async (req = request, res = response) => {
       ruta: idRuta,
       credito: idCredito,
       cliente: credito.cliente.id,
-      turno: ruta.turno
     })
 
     // se agrega el pago al arreglo de pagos que tiene el credito y aparte de eso se hacen las operaciones en los campos de saldo y abonos
@@ -101,11 +100,9 @@ const addPago = async (req = request, res = response) => {
     // si el saldo del credito despues de hacer el pago es 0 tenemos que cambiar el status del credito y del cliente
     if (credito.saldo === 0) {
       credito.status = false;
-      ruta.clientes_activos -= 1;
       await ClienteModel.findByIdAndUpdate(credito.cliente.id, { status: false })
-    }
+    };
     
-    ruta.turno += 1;
     await ruta.save();
     await credito.save();
     await actualizarRuta(idRuta);
