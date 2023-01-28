@@ -60,34 +60,6 @@ const getRutas = async (req = request, res = response) => {
       rutas: rutasDelAdmin
     })
 
-    // const { all = false } = req.query;
-
-    // if (all) {
-    //   const rutas = await RutaModel.find();
-
-    //   return res.status(200).json({
-    //     ok: true,
-    //     rutas
-    //   })
-    // }
-
-    // const { rutas } = req.usuario;
-    // let arrRutas = [];
-    // let creditos = [];
-    // for (let i = 0; i < rutas.length; i++) {
-    //   let rutaModel = await RutaModel.findById(rutas[i])
-    //   let creditos = await CreditoModel.find({ ruta: rutas[i], status: true })
-    //   let cartera = 0;
-
-    //   creditos.forEach(credito => {
-    //     cartera += credito.saldo
-    //   })
-
-    //   rutaModel.cartera = cartera
-    //   await rutaModel.save()
-    //   arrRutas.push(rutaModel)
-    // }
-
   } catch (err) {
     console.log(err)
     res.status(500).json({
@@ -212,8 +184,9 @@ const closeRuta = async (req = request, res = response) => {
     ruta.status = false;
     ruta.ultimo_cierre = fecha;
     ruta.ultima_caja = caja.id;
+    ruta.turno = 1;
     
-    await ruta.save()
+    await ruta.save();
     await updateRuta(idRuta);
 
     return res.status(200).json({
@@ -265,6 +238,7 @@ const openRuta = async (req = request, res = response) => {
     ruta.status = true;
     ruta.ultima_apertura = fecha;
     ruta.turno = 1;
+    
     await ruta.save();
     await updateRuta(idRuta);
 
