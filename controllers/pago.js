@@ -97,6 +97,8 @@ const addPago = async (req = request, res = response) => {
     credito.saldo -= valor;
     credito.turno = ruta.turno;
 
+    ruta.turno += 1;
+
     // si el saldo del credito despues de hacer el pago es 0 tenemos que cambiar el status del credito y del cliente
     if (credito.saldo === 0) {
       credito.status = false;

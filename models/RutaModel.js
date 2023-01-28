@@ -84,6 +84,11 @@ const RutaModel = new Schema({
     ref: 'CajaModel'
   },
 
+  turno: {
+    type: Number,
+    default: 1
+  }
+
 });
 
 RutaModel.methods.toJSON = function() {
