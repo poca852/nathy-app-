@@ -1,5 +1,6 @@
 const { request, response } = require("express");
-const actualizarCaja = require("../helpers/update-caja");
+const { actualizarCaja } = require("../helpers");
+const updateRuta = require('../helpers/update-ruta');
 
 // models
 const { RutaModel,
@@ -58,34 +59,6 @@ const getRutas = async (req = request, res = response) => {
       ok: true,
       rutas: rutasDelAdmin
     })
-
-    // const { all = false } = req.query;
-
-    // if (all) {
-    //   const rutas = await RutaModel.find();
-
-    //   return res.status(200).json({
-    //     ok: true,
-    //     rutas
-    //   })
-    // }
-
-    // const { rutas } = req.usuario;
-    // let arrRutas = [];
-    // let creditos = [];
-    // for (let i = 0; i < rutas.length; i++) {
-    //   let rutaModel = await RutaModel.findById(rutas[i])
-    //   let creditos = await CreditoModel.find({ ruta: rutas[i], status: true })
-    //   let cartera = 0;
-
-    //   creditos.forEach(credito => {
-    //     cartera += credito.saldo
-    //   })
-
-    //   rutaModel.cartera = cartera
-    //   await rutaModel.save()
-    //   arrRutas.push(rutaModel)
-    // }
 
   } catch (err) {
     console.log(err)
@@ -202,26 +175,19 @@ const closeRuta = async (req = request, res = response) => {
     const { idRuta } = req.params;
     const { fecha } = req.body;
 
-    const [ruta, caja, clientes] = await Promise.all([
+    const [ruta, caja] = await Promise.all([
       RutaModel.findById(idRuta),
       CajaModel.findOne({ruta: idRuta, fecha}),
-      CreditoModel.find({ruta: idRuta, status: true})
     ])
-
-    const creditosPendientes = clientes.filter(credito => credito.ultimo_pago !== fecha);
-
-    creditosPendientes.forEach(async(credito) => {
-      credito.turno = ruta.turno;
-      ruta.turno += 1;
-      await credito.save()
-    })
 
     // cerramos la ruta
     ruta.status = false;
     ruta.ultimo_cierre = fecha;
     ruta.ultima_caja = caja.id;
-
-    await ruta.save()
+    ruta.turno = 1;
+    
+    await ruta.save();
+    await updateRuta(idRuta);
 
     return res.status(200).json({
       ok: true
@@ -272,7 +238,9 @@ const openRuta = async (req = request, res = response) => {
     ruta.status = true;
     ruta.ultima_apertura = fecha;
     ruta.turno = 1;
+    
     await ruta.save();
+    await updateRuta(idRuta);
 
 
     return res.status(200).json({
@@ -313,6 +281,33 @@ const addRutaAdmin = async (req = request, res = response) => {
       msg: 'Hable con el administrador'
     })
   }
+};
+
+const closeRutaAdmin = async(req = request, res = response) => {
+  try {
+
+    const {id} = req.params;
+
+    const ruta = await RutaModel.findById(id)
+      .populate('caja_actual');
+
+    ruta.status = false;
+    ruta.ultima_caja = ruta.caja_actual._id;
+    ruta.ultimo_cierre = ruta.caja_actual.fecha;  
+    await ruta.save();
+
+    return res.status(200).json({
+      ok: true
+    })
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      error,
+      msg: 'Hable con el administrador'
+    })
+  }
 }
 
 module.exports = {
@@ -324,5 +319,6 @@ module.exports = {
   getRutas,
   addRutaAdmin,
   addEmpleado,
-  deleteRuta
+  deleteRuta,
+  closeRutaAdmin
 }

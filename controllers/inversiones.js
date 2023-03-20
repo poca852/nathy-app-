@@ -1,7 +1,6 @@
 const { request, response } = require("express");
 const { InversionModel, RutaModel, CajaModel } = require('../models');
-const actualizarCaja = require('../helpers/update-caja');
-const actualizarRuta = require('../helpers/update-ruta');
+const { actualizarCaja, actualizarRuta } = require('../helpers');
 
 const addInversion = async (req = request, res = response) => {
 

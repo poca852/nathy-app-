@@ -2,8 +2,9 @@ const { request, response } = require("express");
 const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
 const { generarCredito, updatedCredito } = require("../helpers/creditos");
 const { getCredito } = require("../class/credito");
-const actualizarRuta = require('../helpers/update-ruta');
-const actualizarCaja = require("../helpers/update-caja");
+const { actualizarRuta, actualizarCaja } = require('../helpers');
+const moment = require('moment');
+moment().format()
 
 const addCredito = async (req = request, res = response) => {
 
@@ -12,11 +13,11 @@ const addCredito = async (req = request, res = response) => {
     const { idCliente } = req.params;
     const { ruta } = req.usuario;
     const body = req.body;
-    
+
     const [clienteModel] = await Promise.all([
       ClienteModel.findById(idCliente),
     ])
-    
+
     const credito = await CreditoModel.create({
       ...generarCredito(body),
       cliente: idCliente,
@@ -49,17 +50,17 @@ const addCredito = async (req = request, res = response) => {
   }
 }
 
-const creditoManual = async(req = request, res = response) => {
+const creditoManual = async (req = request, res = response) => {
   const body = req.body;
   const { ruta } = req.usuario;
-  const {idCliente: cliente} = req.params;
+  const { idCliente: cliente } = req.params;
 
-  try{
+  try {
     const credito = await getCredito(body, ruta, cliente)
     return res.status(201).json({
       credito
     })
-  }catch(err){
+  } catch (err) {
     console.log(err)
     res.status(500).json({
       ok: false,
@@ -67,7 +68,7 @@ const creditoManual = async(req = request, res = response) => {
     })
   }
 
-  
+
 }
 
 const getCreditos = async (req = request, res = response) => {
@@ -77,13 +78,13 @@ const getCreditos = async (req = request, res = response) => {
 
     status = JSON.parse(status);
 
-    const creditos = await CreditoModel.find({ruta: idRuta, status})
+    const creditos = await CreditoModel.find({ ruta: idRuta, status })
       .populate('cliente')
       .populate('pagos');
 
-    const filterCreditos = creditos.sort((a,b) => {
-      if(a.turno > b.turno) return -1;
-      if(b.turno > a.turno) return 1;
+    const filterCreditos = creditos.sort((a, b) => {
+      if (a.turno > b.turno) return -1;
+      if (b.turno > a.turno) return 1;
       return 0;
     })
 
@@ -104,7 +105,7 @@ const getCreditos = async (req = request, res = response) => {
 const getCreditoById = async (req = request, res = response) => {
 
   // const {ruta} = req.usuario;
-  
+
   try {
 
     const { idCredito } = req.params;
@@ -133,47 +134,35 @@ const actualizarCredito = async (req = request, res = response) => {
 
     const { idCredito } = req.params;
 
-    const { _id, 
-            idCliente, 
-            idRuta, 
-            interes, 
-            notas, 
-            fecha, 
-            total_cuotas,
-            valor_credito  } = req.body;
+    const { interes,
+      notas,
+      total_cuotas,
+      valor_credito } = req.body;
 
-    const [ ruta, credito, caja ] = await Promise.all([
-      RutaModel.findById(idRuta),
+    const [credito] = await Promise.all([
       CreditoModel.findById(idCredito),
-      CajaModel.findOne({ruta: idRuta, fecha}),
     ]);
 
-    if(valor_credito){
+    if (valor_credito) {
 
       credito.valor_credito = valor_credito;
-      credito.fecha_inicio = fecha;
+      // credito.fecha_inicio = fecha;
 
-      if(interes){
+      if (interes) {
         credito.interes = interes;
       }
 
-      if(total_cuotas){
+      if (total_cuotas) {
         credito.total_cuotas = total_cuotas;
       }
 
-      if(notas){
+      if (notas) {
         credito.notas = notas;
       }
 
-      // regresar todo como estaba
-      ruta.total_prestado -= credito.valor_credito;
-      ruta.cartera -= credito.saldo
 
-      caja.prestamo -= credito.valor_credito;
-      caja.caja_final += credito.valor_credito;
-
-      let { total_pagar, valor_cuota } = updatedCredito( credito.valor_credito, 
-        credito.interes, 
+      let { total_pagar, valor_cuota } = updatedCredito(credito.valor_credito,
+        credito.interes,
         credito.total_cuotas);
 
       credito.total_pagar = total_pagar;
@@ -181,24 +170,14 @@ const actualizarCredito = async (req = request, res = response) => {
       credito.saldo = total_pagar;
       credito.abonos = 0
 
-      // volver a calular los valores en caja y ruta
-      ruta.total_prestado += valor_credito;
-      ruta.cartera += total_pagar;
-
-      caja.prestamo += valor_credito;
-      caja.caja_final -= valor_credito;
-
-      // guardar todo 
-      await ruta.save();
-      await caja.save();
       await credito.save();
     }
 
-    
-    return res.status(200).json({
-      ok: true,
-      credito
-    })
+    await actualizarCaja(credito.ruta, credito.fecha_inicio)
+    await actualizarRuta(credito.ruta)
+
+
+    return res.status(200).json(true)
 
   } catch (error) {
     console.log(error)
@@ -209,34 +188,90 @@ const actualizarCredito = async (req = request, res = response) => {
   }
 }
 
+const actualizarTurno = async (req = request, res = response) => {
+  try {
+    const { idCredito } = req.params;
+    const { turno } = req.body;
+    const { ruta } = req.usuario;
+
+    let { query } = req.query;
+    query = JSON.parse(query);
+
+    if (!query) {
+      // validamos si ese turno ya existe
+      const [validarTurno, credito] = await Promise.all([
+        CreditoModel.find({
+          ruta,
+          turno
+        })
+          .populate('cliente', 'alias'),
+        CreditoModel.findById(idCredito)
+      ])
+
+      if (validarTurno.length > 0) {
+        return res.status(400).json({
+          ok: false,
+          msg: `El turno ${turno} lo tiene ${validarTurno[0].cliente.alias}, prueba con otro numero de turno`
+        })
+      };
+
+      credito.turno = turno;
+      await credito.save();
+
+      return res.status(200).json(true)
+    }
+
+    await CreditoModel.findByIdAndUpdate(idCredito, {turno: 0});
+    return res.status(200).json(true);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
 const eliminarCredito = async (req = request, res = response) => {
   try {
     const { idCredito } = req.params;
-    const { fecha, idCliente, idRuta } = req.body;
-    
-    const [ruta, credito, cliente, caja] = await Promise.all([
-      RutaModel.findById(idRuta),
-      CreditoModel.findById(idCredito),
-      ClienteModel.findById(idCliente),
-      CajaModel.findOne({ruta: idRuta, fecha})
+
+    const [credito] = await Promise.all([
+      CreditoModel.findById(idCredito)
     ])
 
-    cliente.status = false;
-    cliente.creditos = cliente.creditos.filter(c => c !== idCredito);
-    ruta.total_prestado -= credito.valor_credito;
-    ruta.cartera -= credito.saldo;
-    caja.prestamo -= credito.valor_credito;
-    caja.caja_final += credito.valor_credito;
+    // actualizar estado del cliente
+    await ClienteModel.findByIdAndUpdate(credito.cliente, { status: false })
 
     await CreditoModel.findByIdAndDelete(idCredito);
 
-    // const 
-    return res.status(200).json({
-      msg: 'Credito eliminado correctamente'
-    })
+    await actualizarCaja(credito.ruta, credito.fecha_inicio);
+    await actualizarRuta(credito.ruta);
+
+    return res.status(200).json(true)
 
   } catch (error) {
     console.log(error)
+    res.status(500).json({
+      ok: false,
+      msg: 'Hable con el administrador'
+    })
+  }
+}
+
+const getCreditoByDate = async (req = request, res = response) => {
+  try {
+    let { fecha, ruta } = req.query;
+    const creditos = await CreditoModel.find({
+      $or: [{ fecha_inicio: fecha }],
+      $and: [{ ruta }]
+    })
+      .populate('cliente')
+
+    return res.status(200).json(creditos)
+  } catch (error) {
+    console.log(error);
     res.status(500).json({
       ok: false,
       msg: 'Hable con el administrador'
@@ -251,4 +286,6 @@ module.exports = {
   actualizarCredito,
   eliminarCredito,
   creditoManual,
+  getCreditoByDate,
+  actualizarTurno
 }

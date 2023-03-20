@@ -72,13 +72,6 @@ const RutaModel = new Schema({
     default: true
   },
 
-  cajas: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'CajaModel'
-    }
-  ],
-
   // la caja actual hace referencia a la caja vigente
   caja_actual: {
     type: Schema.Types.ObjectId,

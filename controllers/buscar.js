@@ -79,6 +79,16 @@ const buscarClienteEnPagos = async(termino = '', res = response) => {
 
 }
 
+const buscarCaja = async(termino = '', res = response, req = request) => {
+  const { rutas } = req.usuario;
+  const { consulta } = req.query;
+  console.log(termino, consulta)
+
+  return res.status(200).json({
+    rutas
+  })
+}
+
 const buscar = (req, res = response) => {
   const {coleccion, termino = ''} = req.params;
   if(!coleccionesPermitidas.includes(coleccion)){
@@ -98,6 +108,10 @@ const buscar = (req, res = response) => {
 
     case 'clientes':
       buscarClientes(termino, res)
+      break;
+
+    case 'caja': 
+      buscarCaja(termino, res, req);
       break;
   
     default:

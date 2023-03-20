@@ -5,7 +5,9 @@ const { getCreditos,
         getCreditoById,
         actualizarCredito,
         eliminarCredito, 
-        creditoManual} = require('../controllers/creditos');
+        creditoManual,
+        getCreditoByDate,
+        actualizarTurno} = require('../controllers/creditos');
         
 const { validarClienteById, 
         validarCreditoById, 
@@ -23,6 +25,8 @@ router.get('/', [
         validarJWT,
         validarCampos
 ], getCreditos);
+
+router.get('/search/date', validarJWT, getCreditoByDate)
 
 // postCreditos
 router.post('/:idCliente', [
@@ -64,10 +68,15 @@ router.put('/:idCredito', [
         isOpenRuta,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
-        check('idRuta', 'No es un id valido').isMongoId(),
-        check('idRuta').custom(validarRutaById),
         validarCampos
 ], actualizarCredito);
+
+router.put('/turno/:idCredito', [
+        validarJWT,
+        check('idCredito').custom(validarCreditoById),
+        check('turno', 'El turno debe ser un numero').isInt(),
+        validarCampos
+], actualizarTurno)
 
 // deleteCredito
 router.delete('/:idCredito', [
@@ -75,11 +84,6 @@ router.delete('/:idCredito', [
         esSuperAdmin,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
-        check('idRuta', 'No es un id valido').isMongoId(),
-        check('idRuta').custom(validarRutaById),
-        check('idCliente', 'No es un id valido').isMongoId(),
-        check('idCliente').custom(validarClienteById),
-        check('fecha', 'La fecha es obligatoria').not().isEmpty(),
         esSuperAdmin
 ], eliminarCredito);
 

@@ -1,6 +1,7 @@
 const { Router, request, response } = require('express');
 const { CreditoModel,
-  RutaModel } = require('../models');
+  RutaModel, 
+  PagoModel} = require('../models');
 
 const router = Router();
 
@@ -23,6 +24,28 @@ router.post('/', async (req = request, res = response) => {
     ruta
   })
 
+})
+
+router.get('/cobrado', async(req = request, res = response) => {
+  const {ruta} = req.body;
+
+  const pagos = await PagoModel.find({ruta, fecha: new RegExp('07/11/2022', 'i')})
+
+  let cobroReal = 0;
+
+  pagos.forEach(pago => {
+    cobroReal += pago.valor;
+  })
+
+  res.json({
+    msg: 'prueba',
+    cobroReal
+  })
+})
+
+router.get('/turno', async(req = request, res = response) => {
+  await CreditoModel.updateMany({status: true}, {turno: 0})
+  return res.status(200).json(true)
 })
 
 module.exports = router;
