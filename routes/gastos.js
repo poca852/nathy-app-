@@ -10,7 +10,7 @@ const { getGastos,
 const { validarGastoById, 
         validarRutaById } = require('../helpers/db-validators');
 
-const { validarJWT, validarCampos } = require('../middlewares/');
+const { validarJWT, validarCampos, isOpenRuta } = require('../middlewares/');
 
 const router = Router();
 
@@ -30,6 +30,7 @@ router.get('/:idGasto', [
 
 router.post('/', [
   validarJWT,
+  isOpenRuta,
   check('valor', 'El valor del gasto es obligatorio').isNumeric(),
   check('gasto').custom(validarGastoById),
   check('fecha', 'La fecha es obligatoria').not().isEmpty(),

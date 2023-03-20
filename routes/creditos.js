@@ -13,7 +13,8 @@ const { validarClienteById,
 
 const { validarCampos, 
         validarJWT,
-        esSuperAdmin } = require('../middlewares');
+        esSuperAdmin,
+        isOpenRuta } = require('../middlewares');
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.get('/', [
 // postCreditos
 router.post('/:idCliente', [
         validarJWT,
+        isOpenRuta,
         check('idCliente', 'No es un id valido').isMongoId(),
         check('idCliente').custom(validarClienteById),
         check('valor_credito', 'Monto Incorrecto').isNumeric(),
@@ -37,6 +39,7 @@ router.post('/:idCliente', [
 
 router.post('/manual/:idCliente', [
         validarJWT,
+        isOpenRuta,
         check('idCliente', 'No es un id valido').isMongoId(),
         check('idCliente').custom(validarClienteById),
         check('valor_credito', 'Monto Incorrecto').isNumeric(),
@@ -58,6 +61,7 @@ router.get('/:idCredito', [
 // patchCredito
 router.put('/:idCredito', [
         validarJWT,
+        isOpenRuta,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
         check('idRuta', 'No es un id valido').isMongoId(),

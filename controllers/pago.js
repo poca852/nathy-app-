@@ -174,7 +174,16 @@ const updatePago = async (req = request, res = response) => {
         .populate('cliente', 'id'),
       CajaModel.findOne({ruta, fecha: queryFecha[0]}),
       ClienteModel.findById(cliente)
-    ])
+    ]);
+
+
+    // Esta comprobacion es para ver si la ruta ya se encuentra cerrada a la hora de querer ingresar un pago
+    if(!getRuta.status){ 
+      return res.status(404).json({
+        ok: false,
+        msg: 'La ruta ya se encuentra cerrada.'
+      })
+    }
 
     // actualizamos
     if(!getCredito.status){

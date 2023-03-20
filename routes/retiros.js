@@ -10,13 +10,15 @@ const { getRetiros,
 const { validarExisteRetiroById, validarRutaById } = require('../helpers/db-validators');
 
 const { validarJWT, 
-        validarCampos } = require('../middlewares/');
+        validarCampos,
+        isOpenRuta } = require('../middlewares/');
 
 const router = Router();
 
 
 router.post('/', [
   validarJWT,
+  isOpenRuta,
   check('valor', 'El valor es obligatorio').isNumeric(),
   check('fecha', 'La fecha es obligatoria').not().isEmpty(),
   validarCampos
