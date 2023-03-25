@@ -12,7 +12,9 @@ const { validarClienteById, validarDpi, validarRutaById } = require('../helpers'
 // const { validarCliente } = require('../helpers/db-validators');
 
 // middlewares
-const { validarCampos, validarJWT } = require('../middlewares')
+const { validarCampos, 
+        validarJWT,
+        isOpenRuta } = require('../middlewares')
 
 const router = Router();
 
@@ -21,6 +23,7 @@ const router = Router();
 // crear un cliente
 router.post('/', [
   validarJWT,
+  isOpenRuta,
   check('dpi', 'El dpi es obligatorio').not().isEmpty(),
   check('alias', 'El alias es obligatorio').not().isEmpty(),
   check('telefono', 'El dpi es obligatorio').not().isEmpty(),
@@ -49,6 +52,7 @@ router.get('/one/:idCliente', [
 // actualizar un cliente
 router.patch('/:idCliente', [
   validarJWT,
+  isOpenRuta,
   check('idCliente', 'No es un id valido').isMongoId(),
   check('idCliente').custom(validarClienteById),
   validarCampos

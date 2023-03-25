@@ -11,13 +11,15 @@ const { validarExisteInversionById,
         validarRutaById } = require('../helpers/db-validators');
 
 const { validarJWT, 
-        validarCampos} = require('../middlewares/')
+        validarCampos,
+        isOpenRuta} = require('../middlewares/')
 
 const router = Router();
 
 // agregar inversion
 router.post('/', [
   validarJWT,
+  isOpenRuta,
   check('valor', 'El Valor de la inversion es obligatoria').isNumeric(),
   check('fecha', 'La fecha es obligatoria').not().isEmpty(),
   check('idRuta', 'No es un id valido').isMongoId(),
