@@ -10,7 +10,8 @@ class Server {
     this.server = require('http').createServer(this.app);
     this.io = require('socket.io')(this.server, {
       cors: {
-        origin: 'http://localhost:4200'
+        origin: 'http://localhost:4200',
+        origin: 'https://www.nathyapp.live'
       }
     })
 
