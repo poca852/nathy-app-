@@ -8,11 +8,7 @@ class Server {
     this.app = express();
     this.port= process.env.PORT;
     this.server = require('http').createServer(this.app);
-    this.io = require('socket.io')(this.server, {
-      cors: {
-        origin: 'http://0.0.0.0:8080',
-      }
-    })
+    this.io = require('socket.io')(this.server)
 
     // rutas de mi api
     this.paths = {
@@ -56,7 +52,16 @@ class Server {
 
   middlewares(){
     // cors
-    this.app.use(cors());
+    this.app.use(cors({
+      origin: [
+        'https://www.nathyapp.live', 
+        'https://www.nathyapp.live:8080', 
+        'http://localhost:8080', 
+        'http://0.0.0.0:8080',
+        'https://nathyapp.live',
+        'https://nathyapp.live:8080'
+      ]
+    }));
 
     // lectura y parseo del body
     this.app.use(express.json());
