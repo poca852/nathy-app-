@@ -1,8 +1,14 @@
 const { request, response } = require("express");
-const { CreditoModel, ClienteModel, PagoModel, RutaModel, CajaModel } = require('../models');
+const { CreditoModel, 
+        ClienteModel, 
+        PagoModel, 
+        RutaModel, 
+        CajaModel } = require('../models');
+
 const moment = require('moment');
 const { calcularExtra } = require("../helpers/caja");
 const { actualizarRuta, actualizarCaja } = require("../helpers");
+const { actualizarCredito, actualizarPago, agregarPago } = require("../class/updateCredito");
 moment.tz.setDefault('America/Guatemala');
 
 // getPagos
@@ -154,103 +160,25 @@ const updatePago = async (req = request, res = response) => {
   try {
 
     const { idPago } = req.params;
-    const { _id, 
-            credito, 
-            cliente, 
-            valor, 
-            fecha, 
-            ruta } = req.body;
+    const { valor, fecha } = req.body;
+    const { ruta } = req.usuario;
 
+    const pagoDb = await PagoModel.findById(idPago)
+      .populate('cliente')
+      .populate('credito', 'id')
 
-    const queryFecha = fecha.split(' ');
-
-    const [getPago, getCredito, cajaActual, clienteModel] = await Promise.all([
-      PagoModel.findById(idPago)
-        .populate('credito', 'id'),
-      CreditoModel.findById(credito)
-        .populate('cliente', 'id'),
-      CajaModel.findOne({ruta, fecha: queryFecha[0]}),
-      ClienteModel.findById(cliente)
-    ]);
-
-
-    // Esta comprobacion es para ver si la ruta ya se encuentra cerrada a la hora de querer ingresar un pago
-    if(!getRuta.status){ 
-      return res.status(404).json({
-        ok: false,
-        msg: 'La ruta ya se encuentra cerrada.'
-      })
-    }
-
-    // actualizamos
-    if(!getCredito.status){
-      getRuta.clientes_activos += 1;
-    }
-
-    // lo primero devolver todo a como estaba
-    getCredito.status = true; // devolvermos el estatus del credito a true
-    getCredito.saldo += getPago.valor; // devolvemos el saldo del credito a como estaba 
-    getCredito.abonos -= getPago.valor; // devolvemos los abonos como estaban
-
-    // dependiendo si es un pago extra o no, actualizamos el campo extra o cobro respectivamente
-    if(queryFecha[0] === getCredito.fecha_inicio){
-      cajaActual.extra -= getPago.valor;
-    }else{
-      cajaActual.cobro -= getPago.valor; // devolvemos el cobro de la caja a su estado normal
-    }
-
-    cajaActual.caja_final -= getPago.valor; // devolvemos la caja final a su estado normal
-
-    clienteModel.status = true; // devolvemos el estatus al cliente por si al caso ya el pago anterior habia puesto su status en false
-    
-    // ahora volver a calcular
-    if (valor > getCredito.saldo) {
-      // si entra aca es porque el valor es mayor al saldo del credito
-      return res.status(401).json({
-        ok: false,
-        msg: `El saldo del cliente es ${getCredito.saldo}`
-      })
-    }
-
-
-    getPago.valor = valor; // se actualiza el valor del pago
-    getPago.fecha = fecha; // se actualiza la fecha del pago
-
-    getCredito.saldo -= valor; // se actualiza el saldo del credito
-    getCredito.abonos += valor; // se actualiza los abonos del credito
-
-    if(queryFecha[0] === getCredito.fecha_inicio){
-      cajaActual.extra += valor;
-    }else{
-      cajaActual.cobro += valor;
-    }
-
-    cajaActual.caja_final += valor;
-
-    if (getCredito.saldo === 0) {
-      // si entra a esta condicion es porque ya el saldo quedo en 0 por lo tanto el estatus del credito debe pasar a false lo mismo con el status del cliente
-      getCredito.status = false;
-      clienteModel.status = false;
-    };
-
-    // ya realizadas todas la operaciones guardamos los cambios realizados
-    await getCredito.save();
-    await getPago.save();
-    await cajaActual.save();
-    await clienteModel.save();
-
+    await actualizarPago(pagoDb.credito.id, valor, fecha, idPago);
     await actualizarRuta(ruta);
 
     return res.status(200).json({
       ok: true,
-      getPago
     })
 
   } catch (error) {
     console.log(error)
     res.status(500).json({
       ok: false,
-      msg: 'Hable con el administrador'
+      msg: error.message
     })
   }
 }
