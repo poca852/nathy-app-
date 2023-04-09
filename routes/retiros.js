@@ -10,8 +10,8 @@ const { getRetiros,
 const { validarExisteRetiroById, validarRutaById } = require('../helpers/db-validators');
 
 const { validarJWT, 
-        validarCampos,
-        isOpenRuta } = require('../middlewares/');
+        validarCampos, 
+        isOpenRuta} = require('../middlewares/');
 
 const router = Router();
 

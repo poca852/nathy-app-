@@ -1,11 +1,12 @@
 const validaCampos = require('./validar-campos');
 const validarJWT = require('./validar-jwt');
+const isOpenRuta = require('./validar-isOpenRuta');
 const { esSuperAdmin } = require('./validar-roles');
-const { isOpenRuta } = require('./validar-ruta-abierta')
+
 
 module.exports = {
   ...validaCampos,
   ...validarJWT,
+  isOpenRuta,
   esSuperAdmin,
-  isOpenRuta
 }

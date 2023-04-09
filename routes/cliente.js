@@ -12,7 +12,9 @@ const { validarClienteById, validarDpi, validarRutaById } = require('../helpers'
 // const { validarCliente } = require('../helpers/db-validators');
 
 // middlewares
-const { validarCampos, validarJWT, isOpenRuta } = require('../middlewares')
+const { validarCampos, 
+        validarJWT,
+        isOpenRuta } = require('../middlewares')
 
 const router = Router();
 
