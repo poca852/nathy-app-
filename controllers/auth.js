@@ -2,10 +2,13 @@ const { request, response } = require("express");
 const bcryptjs = require('bcryptjs');
 const { UsuarioModel, RutaModel } = require('../models');
 const { generarJWT } = require("../helpers");
+const moment = require('moment-timezone')
+moment.tz.setDefault('America/Guatemala');
 
 const login = async (req = request, res = response) => {
 
   const { username, password } = req.body;
+  const hoy = moment().format('DD/MM/YYYY');
 
   try {
 
@@ -16,7 +19,7 @@ const login = async (req = request, res = response) => {
     if (!user) {
       return res.status(404).json({
         ok: false,
-        msg: `El usuario ${username} no existe.`
+        msg: `Verifique sus datos`
       })
     }
 
@@ -47,11 +50,19 @@ const login = async (req = request, res = response) => {
     // validamos que la ruta se encuentre abierta, si la ruta esta cerrada le enviamos un mensaje al cobrador diciendo que la ruta se encuentra cerrada
 
     const rutaModel = await RutaModel.findById(user.ruta)
+      .populate("caja_actual", 'fecha');
 
     if(!rutaModel.status){
       return res.status(403).json({
         ok: false,
         msg: 'Ruta cerrada, hable con su administrador'
+      })
+    };
+
+    if(rutaModel.caja_actual.fecha !== hoy){
+      return res.status(401).json({
+        ok: false,
+        msg: 'NO CERRASTE LA RUTA!!! por favor avisale a tu supervisor para que la habilite.'
       })
     }
 

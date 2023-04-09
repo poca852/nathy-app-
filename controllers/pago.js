@@ -67,65 +67,23 @@ const addPago = async (req = request, res = response) => {
   
   try {
 
-    const { valor, fecha } = req.body;
     const { idCredito } = req.params;
-    const { ruta: idRuta } = req.usuario;
-
-    const queryFecha = fecha.split(' ');
-
-    const [ ruta, credito ] = await Promise.all([
-      RutaModel.findById(idRuta),
-      CreditoModel.findById(idCredito)
-        .populate('cliente', 'id')
-    ])
-
-    // verifico que el valor sea menor al saldo del credito 
-    if (valor > credito.saldo) {
-      return res.status(401).json({
-        ok: false,
-        msg: `El saldo del cliente es ${credito.saldo}`
-      })
-    }
-
-    // contrario si no es mayor entonces procesamos el pago
-    const newPago = await PagoModel.create({
-      valor,
-      fecha,
-      ruta: idRuta,
-      credito: idCredito,
-      cliente: credito.cliente.id,
-    })
-
-    // se agrega el pago al arreglo de pagos que tiene el credito y aparte de eso se hacen las operaciones en los campos de saldo y abonos
-    credito.pagos.unshift(newPago);
-    credito.ultimo_pago = queryFecha[0];
-    credito.abonos += valor;
-    credito.saldo -= valor;
-    credito.turno = ruta.turno;
-
-    ruta.turno += 1;
-
-    // si el saldo del credito despues de hacer el pago es 0 tenemos que cambiar el status del credito y del cliente
-    if (credito.saldo === 0) {
-      credito.status = false;
-      await ClienteModel.findByIdAndUpdate(credito.cliente.id, { status: false })
-    };
-    
-    await ruta.save();
-    await credito.save();
-    await actualizarRuta(idRuta);
-    await actualizarCaja(idRuta, queryFecha[0])
+    const { valor, fecha } = req.body;
+    const {ruta} = req.usuario;
+    const pago = await agregarPago(idCredito, valor, fecha);
+    await actualizarRuta(ruta);
+    await actualizarCaja(ruta, fecha.split(" ")[0]);
 
     return res.status(201).json({
       ok: true,
-      pago: newPago
+      pago
     });
 
   } catch (error) {
     console.log(error)
     res.status(500).json({
       ok: false,
-      msg: 'Hable con el administrador'
+      msg: error.message
     })
   }
 }
@@ -167,8 +125,15 @@ const updatePago = async (req = request, res = response) => {
       .populate('cliente')
       .populate('credito', 'id')
 
-    await actualizarPago(pagoDb.credito.id, valor, fecha, idPago);
-    await actualizarRuta(ruta);
+    // await actualizarPago(pagoDb.credito.id, valor, fecha, idPago);
+    // await actualizarRuta(ruta);
+    // await actualizarCaja(ruta, fecha.split(' ')[0]);
+
+    await Promise.all([
+      actualizarPago(pagoDb.credito.id, valor, fecha, idPago),
+      actualizarRuta(ruta),
+      actualizarCaja(ruta, fecha.split(' ')[0])
+    ])
 
     return res.status(200).json({
       ok: true,

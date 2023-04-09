@@ -1,14 +1,14 @@
 const { CreditoModel, PagoModel, ClienteModel } = require('../models');
 
-const verificarEstadoCliente = async(idCliente) => {
+const verificarEstadoCliente = async (idCliente) => {
   const cliente = await ClienteModel.findById(idCliente)
     .populate('creditos')
 
-  if(cliente.creditos[0].saldo === 0){
+  if (cliente.creditos[0].saldo === 0) {
     cliente.status = false;
     await cliente.save();
     return true;
-  }else{
+  } else {
     cliente.status = true;
     await cliente.save();
   }
@@ -33,7 +33,7 @@ const actualizarCredito = async (id) => {
     // si el saldo es igual a cero damos por finalizado el credito
     if (creditoDb.saldo === 0) {
       creditoDb.status = false;
-    }else{
+    } else {
       creditoDb.status = true;
     }
 
@@ -49,13 +49,13 @@ const actualizarCredito = async (id) => {
   }
 }
 
-const agregarPago = async(idCredito, valor, fecha) => {
+const agregarPago = async (idCredito, valor, fecha) => {
   const credito = await CreditoModel.findById(idCredito);
-  if(!credito){
+  if (!credito) {
     throw new Error('No hay ningun credito con ese id')
   };
 
-  if(valor > credito.saldo){
+  if (valor > credito.saldo) {
     throw new Error(`El saldo del cliente es inferiro al monto que desea ingresar, por favor revise su pago.`)
   }
 
@@ -66,31 +66,34 @@ const agregarPago = async(idCredito, valor, fecha) => {
     ruta: credito.ruta,
     credito: credito.id
   });
-  
-  await verificarEstadoCliente(credito.cliente);
 
-  return true;
+  const pago = await newPago.save();
+  credito.pagos.unshift(pago);
+  await credito.save();
+  await actualizarCredito(idCredito)
+
+  return pago;
 
 }
 
-const actualizarPago = async(idCredito, valor, fecha, idPago) => {
+const actualizarPago = async (idCredito, valor, fecha, idPago) => {
 
   const [credito, pago] = await Promise.all([
     CreditoModel.findById(idCredito),
     PagoModel.findById(idPago)
   ])
 
-  if(!credito){
+  if (!credito) {
     throw new Error('No hay ningun credito con ese id')
   };
 
-  if(valor > credito.saldo + pago.valor){
+  if (valor > credito.saldo + pago.valor) {
     throw new Error(`El saldo del cliente es inferiro al monto que desea ingresar, por favor revise su pago.`)
   }
 
   pago.valor = valor;
   pago.fecha = fecha;
-  
+
   await pago.save()
   await actualizarCredito(idCredito)
 
@@ -101,4 +104,4 @@ const actualizarPago = async(idCredito, valor, fecha, idPago) => {
 
 
 
-module.exports = {actualizarCredito, agregarPago, actualizarPago, verificarEstadoCliente};
+module.exports = { actualizarCredito, agregarPago, actualizarPago, verificarEstadoCliente };

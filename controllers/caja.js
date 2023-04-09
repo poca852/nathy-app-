@@ -16,7 +16,6 @@ const getCaja = async (req = request, res = response) => {
       })
     }
     // verificar si ya existe una caja con la fecha dada
-    await actualizarCaja(idRuta, fecha);
     const caja = await CajaModel.findOne({ ruta: idRuta, fecha })
       .populate('ruta')
 
@@ -25,7 +24,9 @@ const getCaja = async (req = request, res = response) => {
         ok: false,
         msg: 'aun no se ha creado una caja'
       })
-    }
+    };
+
+    await actualizarCaja(idRuta, fecha);
 
     return res.status(200).json({
       ok: true,

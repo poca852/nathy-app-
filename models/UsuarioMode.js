@@ -36,6 +36,11 @@ const UsuarioModel = new Schema({
     ref: 'RutaModel'
   },
 
+  fecha_cobro: {
+    type: String,
+    default: '19'
+  },
+
   rutas: [
     {
       type: Schema.Types.ObjectId,

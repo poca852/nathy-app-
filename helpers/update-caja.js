@@ -1,20 +1,39 @@
 const {CajaModel, CreditoModel, PagoModel, InversionModel, GastoModel, RetiroModel} = require('../models')
 
 const actualizarCaja = async (ruta, fecha_inicio) => {
-  if(!ruta || !fecha_inicio) throw new Error('la ruta y la fecha es obligatoria');
+
+  if(!ruta || !fecha_inicio) throw new Error('la ruta y la fecha son necesarios');
+
   const [caja, allCreditos, todayCreditos, pagos, inversiones, gastos, retiros, totalClientesPagos] = await Promise.all([
     CajaModel.findOne({ruta, fecha: fecha_inicio}),
     CreditoModel.find({ruta, status: true}),
-    CreditoModel.find({ruta, fecha_inicio}),
-    PagoModel.find({ruta, fecha: new RegExp(fecha_inicio, 'i')}),
+    CreditoModel.find({ruta, fecha_inicio})
+      .populate('pagos'),
+    PagoModel.find({ruta, fecha: new RegExp(fecha_inicio, 'i')})
+      .populate("credito"),
     InversionModel.find({ruta, fecha: fecha_inicio}),
     GastoModel.find({ruta, fecha: fecha_inicio}),
     RetiroModel.find({ruta, fecha: fecha_inicio}),
     PagoModel.countDocuments({ruta, fecha: new RegExp(fecha_inicio, 'i')})
   ]);
 
+  let extra = 0;
 
   if(!caja) throw new Error('Esta intentando actualizar una caja que no existe')
+
+  // primero verificar que pagos se han echo por encima de su valor de cutoa;
+  pagos.forEach(p => {
+    if(p.valor > p.credito.valor_cuota){
+      extra += p.valor - p.credito.valor_cuota
+    }
+  })
+
+  todayCreditos.forEach(c => {
+    if(c.pagos.length > 0){
+      extra += c.pagos[0].valor;
+    }
+  })
+
 
   let base = caja.base;
   let inversion = 0;
@@ -62,7 +81,7 @@ const actualizarCaja = async (ruta, fecha_inicio) => {
   caja.pretendido = pretendido,
   caja.clientes_pendientes = total_clientes - totalClientesPagos
   caja.renovaciones = renovaciones,
-  caja.extra =  (cobro > pretendido) ? cobro - pretendido : 0,
+  caja.extra =  extra;
   caja.caja_final = (base + inversion + cobro) - (retiro + gasto + prestamo)
 
   await caja.save()
