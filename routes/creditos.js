@@ -65,7 +65,7 @@ router.get('/:idCredito', [
 // patchCredito
 router.put('/:idCredito', [
         validarJWT,
-        isOpenRuta,
+        // isOpenRuta,
         check('idCredito', 'No es un id valido').isMongoId(),
         check('idCredito').custom(validarCreditoById),
         validarCampos
