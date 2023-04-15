@@ -1,4 +1,4 @@
-const { CreditoModel, PagoModel, ClienteModel } = require('../models');
+const { CreditoModel, PagoModel, ClienteModel, RutaModel } = require('../models');
 
 const verificarEstadoCliente = async (idCliente) => {
   const cliente = await ClienteModel.findById(idCliente)
@@ -14,11 +14,12 @@ const verificarEstadoCliente = async (idCliente) => {
   }
 }
 
-const actualizarCredito = async (id) => {
+const actualizarCredito = async (id, nuevo = false) => {
 
   try {
     const creditoDb = await CreditoModel.findById(id)
-      .populate('pagos', 'valor fecha')
+      .populate('pagos', 'valor fecha');
+
 
     // abonos
     let abonos = 0;
@@ -39,6 +40,12 @@ const actualizarCredito = async (id) => {
 
     // actualizamos el ultimo pago
     creditoDb.ultimo_pago = creditoDb.pagos[0].fecha.split(' ')[0];
+
+    if(nuevo){
+      const rutaDb = await RutaModel.findById(creditoDb.ruta);
+      
+      creditoDb.turno = rutaDb.turno;
+    }
 
     await creditoDb.save();
 
@@ -70,7 +77,7 @@ const agregarPago = async (idCredito, valor, fecha) => {
   const pago = await newPago.save();
   credito.pagos.unshift(pago);
   await credito.save();
-  await actualizarCredito(idCredito)
+  await actualizarCredito(idCredito, true)
 
   return pago;
 
