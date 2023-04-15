@@ -43,6 +43,9 @@ const actualizarCredito = async (id, nuevo = false) => {
 
     if(nuevo){
       const rutaDb = await RutaModel.findById(creditoDb.ruta);
+
+      rutaDb.turno += 1;
+      await rutaDb.save()
       
       creditoDb.turno = rutaDb.turno;
     }
