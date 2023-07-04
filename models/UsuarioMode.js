@@ -46,7 +46,12 @@ const UsuarioModel = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'RutaModel'
     }
-  ]
+  ],
+
+  empresa: {
+    type: Schema.Types.ObjectId,
+    ref: "EmpresaModel"
+  }
 });
 
 UsuarioModel.methods.toJSON = function(){

@@ -87,7 +87,9 @@ const RutaModel = new Schema({
   turno: {
     type: Number,
     default: 1
-  }
+  },
+
+  empresa: { type: Schema.Types.ObjectId, ref: 'EmpresaModel'}
 
 });
 

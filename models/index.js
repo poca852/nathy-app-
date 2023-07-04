@@ -9,6 +9,7 @@ const RetiroModel = require('./RetiroModel');
 const GastoModel = require('./GastoModel');
 const RolModel = require('./rol');
 const Gasto = require('./gasto');
+const EmpresaModel = require('./EmpresaModel');
 
 module.exports = {
   UsuarioModel,
@@ -21,5 +22,6 @@ module.exports = {
   RetiroModel,
   GastoModel,
   RolModel,
-  Gasto
+  Gasto,
+  EmpresaModel
 }

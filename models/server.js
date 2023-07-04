@@ -10,7 +10,7 @@ class Server {
     this.server = require('http').createServer(this.app);
     this.io = require('socket.io')(this.server, {
       cors: {
-        origin: ['https://nathyapp.live', 'http://localhost:4200']
+        origin: ['https://nathyapp.live', 'http://localhost:4200', 'https://admin.nathyapp.live']
       }
     })
 
@@ -31,7 +31,8 @@ class Server {
       roles: '/api/roles',
       buscar: '/api/buscar',
       pruebas: '/api/test',
-      seed: '/api/seed'
+      seed: '/api/seed',
+      empresa: '/api/empresa'
     }
 
     // middlewares
@@ -82,6 +83,7 @@ class Server {
     this.app.use(this.paths.buscar, require('../routes/buscar'));
     this.app.use(this.paths.pruebas, require('../routes/pruebas'));
     this.app.use(this.paths.seed, require('../routes/seed'));
+    this.app.use(this.paths.empresa, require('../routes/empresa'));
   }
 
   sockets() {
