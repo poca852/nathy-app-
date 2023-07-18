@@ -117,6 +117,7 @@ const renew = async (req = request, res = response) => {
 const renewAdmin = async (req = request, res = response) => {
 
   const { usuario } = req;
+  console.log({usuario});
   
   try {
 

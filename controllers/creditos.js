@@ -79,7 +79,10 @@ const getCreditos = async (req = request, res = response) => {
     status = JSON.parse(status);
 
     const creditos = await CreditoModel.find({ ruta: idRuta, status })
-      .populate('cliente')
+      .populate({
+        path: "cliente",
+        select: "nombre alias"
+      })
       .populate('pagos');
 
     const filterCreditos = creditos.sort((a, b) => {
@@ -88,10 +91,7 @@ const getCreditos = async (req = request, res = response) => {
       return 0;
     })
 
-    return res.status(200).json({
-      ok: true,
-      creditos: filterCreditos
-    })
+    return res.status(200).json(filterCreditos);
 
   } catch (error) {
     console.log(error)
