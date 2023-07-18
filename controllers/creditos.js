@@ -104,8 +104,6 @@ const getCreditos = async (req = request, res = response) => {
 
 const getCreditoById = async (req = request, res = response) => {
 
-  // const {ruta} = req.usuario;
-
   try {
 
     const { idCredito } = req.params;
@@ -114,10 +112,13 @@ const getCreditoById = async (req = request, res = response) => {
       .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
       .populate('pagos', ['fecha', 'valor'])
 
-    return res.status(200).json({
-      ok: true,
-      credito
-    })
+    if(!credito){
+      return res.status(404).json({
+        msg: "No existe un credito con el id " + idCredito
+      })
+    }
+
+    return res.status(200).json(credito)
 
   } catch (error) {
     console.log(error)

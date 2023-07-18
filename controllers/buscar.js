@@ -13,10 +13,10 @@ const coleccionesPermitidas = [
   'pagos'
 ];
 
-const buscarClientes = async(termino = '', res = response) => {
+const buscarClientes = async (termino = '', res = response) => {
   const esMongoId = ObjectId.isValid(termino);
 
-  if(esMongoId){
+  if (esMongoId) {
     const cliente = await ClienteModel.findById(termino);
     return res.status(200).json({
       results: (cliente) ? [cliente] : []
@@ -25,8 +25,8 @@ const buscarClientes = async(termino = '', res = response) => {
 
   const regex = new RegExp(termino, 'i');
   const clientes = await ClienteModel.find({
-    $or: [{nombre: regex}, {alias: regex}],
-    $and: [{status: true}]
+    $or: [{ nombre: regex }, { alias: regex }],
+    $and: [{ status: true }]
   });
 
   return res.status(200).json({
@@ -34,38 +34,44 @@ const buscarClientes = async(termino = '', res = response) => {
   })
 }
 
-const buscarCreditosByName = async(termino = '', res = response, req = request) => {
-  const {ruta} = req.usuario;
+const buscarCreditosByName = async (termino = '', res = response, req = request) => {
+  const { ruta } = req.usuario;
 
-  const allCreditos = await CreditoModel.find({ruta, status: true})
-    .populate('cliente')
-    .populate('pagos', ['fecha', 'valor'])
+  let allCreditos = await CreditoModel.find({ ruta, status: true })
+    .populate({
+      path: "cliente",
+      select: "nombre alias"
+    })
+    .populate('pagos');
+
+  if (termino === 'all') {
+
+    allCreditos = allCreditos.sort((a, b) => {
+      if (a.turno > b.turno) return -1;
+      if (b.turno > a.turno) return 1;
+      return 0;
+    })
+    
+    return res.status(200).json(allCreditos)
+  }
 
   const creditos = allCreditos.filter(c => c.cliente.alias.includes(termino.toUpperCase()));
 
-  if(termino === 'all'){
-    return res.status(200).json({
-      results: allCreditos
-    })
-  }
-
-  res.status(200).json({
-    results: creditos
-  })
+  res.status(200).json(creditos)
 
 }
 
-const buscarClienteEnPagos = async(termino = '', res = response) => {
+const buscarClienteEnPagos = async (termino = '', res = response) => {
   const { ruta } = req.usuario;
 
   const hoy = moment().format('DD/MM/YYYY')
 
-  const allPagos = await PagoModel.find({ruta, fecha: new RegExp(hoy, 'i')})
+  const allPagos = await PagoModel.find({ ruta, fecha: new RegExp(hoy, 'i') })
     .populate('cliente')
 
-  const pagos = allPagos.filter( p => p.cliente.alias.includes(termino.toUpperCase()))
+  const pagos = allPagos.filter(p => p.cliente.alias.includes(termino.toUpperCase()))
 
-  if(termino === 'all'){
+  if (termino === 'all') {
     return res.status(200).json({
       ok: true,
       pagos: allPagos
@@ -79,7 +85,7 @@ const buscarClienteEnPagos = async(termino = '', res = response) => {
 
 }
 
-const buscarCaja = async(termino = '', res = response, req = request) => {
+const buscarCaja = async (termino = '', res = response, req = request) => {
   const { rutas } = req.usuario;
   const { consulta } = req.query;
   console.log(termino, consulta)
@@ -90,8 +96,8 @@ const buscarCaja = async(termino = '', res = response, req = request) => {
 }
 
 const buscar = (req, res = response) => {
-  const {coleccion, termino = ''} = req.params;
-  if(!coleccionesPermitidas.includes(coleccion)){
+  const { coleccion, termino = '' } = req.params;
+  if (!coleccionesPermitidas.includes(coleccion)) {
     return res.status(400).json({
       msg: `Las colecciones permitidas son ${coleccionesPermitidas}`
     })
@@ -102,7 +108,7 @@ const buscar = (req, res = response) => {
       buscarCreditosByName(termino, res, req)
       break;
 
-    case 'pagos': 
+    case 'pagos':
       buscarClienteEnPagos(termino, res)
       break;
 
@@ -110,10 +116,10 @@ const buscar = (req, res = response) => {
       buscarClientes(termino, res)
       break;
 
-    case 'caja': 
+    case 'caja':
       buscarCaja(termino, res, req);
       break;
-  
+
     default:
       res.status(401).json({
         msg: 'No se programo esto'
