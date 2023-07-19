@@ -1,7 +1,7 @@
 const { Router, request, response } = require('express');
 const { CreditoModel,
   RutaModel, 
-  PagoModel} = require('../models');
+  PagoModel, InversionModel, GastoModel, RetiroModel, CajaModel, ClienteModel} = require('../models');
 
 const router = Router();
 
@@ -26,20 +26,18 @@ router.post('/', async (req = request, res = response) => {
 
 })
 
-router.get('/cobrado', async(req = request, res = response) => {
-  const {ruta} = req.body;
-
-  const pagos = await PagoModel.find({ruta, fecha: new RegExp('07/11/2022', 'i')})
-
-  let cobroReal = 0;
-
-  pagos.forEach(pago => {
-    cobroReal += pago.valor;
-  })
+router.get('/limpiar', async(req = request, res = response) => {
+  await InversionModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await GastoModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await RetiroModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await CajaModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await ClienteModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await PagoModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await CreditoModel.deleteMany({ruta: "62f1591b0686e9d2767e48a1"})
+  await RutaModel.findByIdAndDelete("62f1591b0686e9d2767e48a1");
 
   res.json({
-    msg: 'prueba',
-    cobroReal
+    ok: true
   })
 })
 
