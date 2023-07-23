@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const Gasto = new Schema({
+const ListGasto = new Schema({
   gasto: {
     type: String,
     required: true,
@@ -8,10 +8,9 @@ const Gasto = new Schema({
   }
 });
 
-Gasto.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+ListGasto.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('Gasto', Gasto)
+module.exports = model('listgasto', ListGasto)

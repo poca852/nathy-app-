@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const PagoModel = new Schema({  
+const Pago = new Schema({  
   fecha: {
     type: String
   },
@@ -25,10 +25,9 @@ const PagoModel = new Schema({
   }
 });
 
-PagoModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Pago.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('PagoModel', PagoModel)
+module.exports = model('pago', Pago)

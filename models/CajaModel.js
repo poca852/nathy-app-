@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const CajaModel = new Schema({
+const Caja = new Schema({
 
   fecha: {
     type: String,
@@ -85,10 +85,9 @@ const CajaModel = new Schema({
   },
 });
 
-CajaModel.methods.toJSON = function(){
-  const { __v, _id, ...resto } = this.toObject();
-  resto.id = _id;
+Caja.methods.toJSON = function(){
+  const { __v, ...resto } = this.toObject();
   return resto;
 }
 
-module.exports = model('CajaModel', CajaModel);
+module.exports = model('caja', Caja);

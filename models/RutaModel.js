@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const RutaModel = new Schema({
+const Ruta = new Schema({
   nombre: {
     type: String,
     required: [true, "El nombre de la ruta es obligatoria"],
@@ -93,10 +93,9 @@ const RutaModel = new Schema({
 
 });
 
-RutaModel.methods.toJSON = function() {
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Ruta.methods.toJSON = function() {
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('RutaModel', RutaModel);
+module.exports = model('ruta', Ruta);

@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const ClienteModel = new Schema({
+const Cliente = new Schema({
 
   // STATUS SE REFIERE A QUE SI TIENE UN CREDITO ACTIVO
   status: {
@@ -74,10 +74,9 @@ const ClienteModel = new Schema({
 
 });
 
-ClienteModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Cliente.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('ClienteModel', ClienteModel);
+module.exports = model('cliente', Cliente);

@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const CreditoModel = new Schema({
+const Credito = new Schema({
 
   pagos: [
     {
@@ -77,10 +77,9 @@ const CreditoModel = new Schema({
   }
 });
 
-CreditoModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Credito.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('CreditoModel', CreditoModel);
+module.exports = model('credito', Credito);

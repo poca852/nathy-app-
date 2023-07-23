@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const RolModel = new Schema({
+const Rol = new Schema({
   rol: {
     type: String,
     required: true,
@@ -9,10 +9,9 @@ const RolModel = new Schema({
   }
 })
 
-RolModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Rol.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('RolModel', RolModel)
+module.exports = model('rol', Rol)

@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const RetiroModel = new Schema({
+const Retiro = new Schema({
   
   fecha: {
     type: String,
@@ -23,10 +23,9 @@ const RetiroModel = new Schema({
   }
 });
 
-RetiroModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Retiro.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('RetiroModel', RetiroModel);
+module.exports = model('retiro', Retiro);

@@ -1,6 +1,6 @@
 const {Schema, model} = require('mongoose');
 
-const InversionModel = new Schema({
+const Inversion = new Schema({
   fecha: {
     type: String
   },
@@ -20,10 +20,9 @@ const InversionModel = new Schema({
   }
 });
 
-InversionModel.methods.toJSON = function(){
-  const {__v, _id, ...resto} = this.toObject();
-  resto.id = _id;
+Inversion.methods.toJSON = function(){
+  const {__v, ...resto} = this.toObject();
   return resto;
 }
 
-module.exports = model('InversionModel', InversionModel);
+module.exports = model('inversion', Inversion);
