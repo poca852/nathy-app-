@@ -1,6 +1,6 @@
 const { request, response } = require("express");
 const bcryptjs = require('bcryptjs');
-const { UsuarioModel, RutaModel } = require('../models');
+const { User, Ruta } = require('../models');
 const { generarJWT } = require("../helpers");
 const moment = require('moment-timezone')
 moment.tz.setDefault('America/Guatemala');
@@ -13,7 +13,7 @@ const login = async (req = request, res = response) => {
   try {
 
     // validamos que el usuario exista en la base de datos
-    const user = await UsuarioModel.findOne({ username })
+    const user = await User.findOne({ username })
       .populate('rol', ['rol'])
 
     if (!user) {
@@ -49,7 +49,7 @@ const login = async (req = request, res = response) => {
 
     // validamos que la ruta se encuentre abierta, si la ruta esta cerrada le enviamos un mensaje al cobrador diciendo que la ruta se encuentra cerrada
 
-    const rutaModel = await RutaModel.findById(user.ruta)
+    const rutaModel = await Ruta.findById(user.ruta)
       .populate("caja_actual", 'fecha');
 
     if(!rutaModel.status){
@@ -150,7 +150,7 @@ const adminLogin = async(req = request, res = response) => {
     
     const { username, password } = req.body;
 
-    const user = await UsuarioModel.findOne({username})
+    const user = await User.findOne({username})
       .populate('rol', 'rol')
       .populate('rutas')
 

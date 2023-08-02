@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { GastoModel, RutaModel, CajaModel } = require('../models');
+const { Gasto, Ruta, CajaModel } = require('../models');
 const moment = require('moment-timezone');
 moment.tz.setDefault('America/Guatemala');
 const { actualizarCaja, actualizarRuta } = require('../helpers');
@@ -10,7 +10,7 @@ const getGastos = async (req = request, res = response) => {
 
   try {
 
-    const gastos = await GastoModel.find({ ruta: idRuta })
+    const gastos = await Gasto.find({ ruta: idRuta })
 
     return res.status(200).json({
       ok: true,
@@ -30,7 +30,7 @@ const getGastoById = async (req = request, res = response) => {
   try {
     const { idGasto } = req.params;
 
-    const gasto = await GastoModel.findById(idGasto);
+    const gasto = await Gasto.findById(idGasto);
 
     return res.status(200).json({
       ok: false,
@@ -53,7 +53,7 @@ const addGasto = async (req = request, res = response) => {
             nota,
             idRuta } = req.body;
 
-    const nuevoGasto = await GastoModel.create({
+    const nuevoGasto = await Gasto.create({
       gasto,
       fecha,
       valor,
@@ -61,19 +61,6 @@ const addGasto = async (req = request, res = response) => {
       ruta: idRuta
     });
 
-    // const [ruta, cajaActual] = await Promise.all([
-    //   RutaModel.findById(idRuta),
-    //   CajaModel.findOne({ruta: idRuta, fecha})
-    // ])
-
-    // // actualizamos la ruta
-    // ruta.gastos += valor;
-    // await ruta.save();
-
-    // // actualizamos la caja
-    // cajaActual.gasto += valor;
-    // cajaActual.caja_final -= valor;
-    // await cajaActual.save();
     await actualizarCaja(idRuta, fecha);
     await actualizarRuta(idRuta);
 
@@ -97,9 +84,9 @@ const actualizarGasto = async( req = request, res = response ) => {
     const { _id, valor, idRuta, nota, gasto, fecha } = req.body;
 
     const [ ruta, cajaActual, gastoModel ] = await Promise.all([
-      RutaModel.findById(idRuta),
+      Ruta.findById(idRuta),
       CajaModel.findOne({ruta: idRuta, fecha}),
-      GastoModel.findById(idGasto)
+      Gasto.findById(idGasto)
     ])
 
     ruta.gastos -= gastoModel.valor;
@@ -139,7 +126,7 @@ const eliminarGasto = async( req = request, res = response ) => {
     const { idRuta, fecha } = req.body;
 
     const [ ruta, cajaActual, gastoModel ] = await Promise.all([
-      RutaModel.findById(idRuta),
+      Ruta.findById(idRuta),
       CajaModel.findOne({ruta: idRuta, fecha}),
       GastoModel.findById(idGasto)
     ])

@@ -1,7 +1,7 @@
 const { request, response } = require("express");
 const Caja = require("../class/Caja");
 const { actualizarCaja } = require("../helpers");
-const { CajaModel, CreditoModel } = require('../models');
+const { Caja } = require('../models');
 
 const getCaja = async (req = request, res = response) => {
 
@@ -16,7 +16,7 @@ const getCaja = async (req = request, res = response) => {
       })
     }
     // verificar si ya existe una caja con la fecha dada
-    const caja = await CajaModel.findOne({ ruta: idRuta, fecha })
+    const caja = await Caja.findOne({ ruta: idRuta, fecha })
       .populate('ruta')
 
     if (!caja) {
@@ -51,7 +51,7 @@ const getCajasForAdmin = async( req = request, res = response) => {
     const { limite = 5, desde = 0 } = req.query;
     const { ruta } = req.params;
 
-    const cajas = await CajaModel.find({ruta})
+    const cajas = await Caja.find({ruta})
 
     res.status(200).json(
       cajas.reverse().splice(Number(desde),Number(limite))
@@ -76,7 +76,7 @@ const searchDate = async(req = request, res = response) => {
     let cajas = [];
 
     for (const ruta of rutas) {
-      let q = await CajaModel.findOne({
+      let q = await Caja.findOne({
         ruta: ruta.id,
         fecha
       })

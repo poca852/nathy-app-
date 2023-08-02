@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { CreditoModel, ClienteModel, RutaModel, CajaModel } = require('../models');
+const { Credito, Cliente } = require('../models');
 const { generarCredito, updatedCredito } = require("../helpers/creditos");
 const { getCredito } = require("../class/credito");
 const { actualizarRuta, actualizarCaja } = require('../helpers');
@@ -14,20 +14,20 @@ const addCredito = async (req = request, res = response) => {
     const { ruta } = req.usuario;
     const body = req.body;
 
-    const [clienteModel] = await Promise.all([
-      ClienteModel.findById(idCliente),
+    const [cliente] = await Promise.all([
+      Cliente.findById(idCliente),
     ])
 
-    const credito = await CreditoModel.create({
+    const credito = await Credito.create({
       ...generarCredito(body),
       cliente: idCliente,
       ruta,
     });
 
     // actualizamos el status del cliente, y actualizaos el arreglo de creditos del cliente
-    clienteModel.status = true;
-    clienteModel.creditos.unshift(credito)
-    await clienteModel.save();
+    cliente.status = true;
+    cliente.creditos.unshift(credito)
+    await cliente.save();
 
     //  actualizar ruta
     await actualizarRuta(ruta)
@@ -78,7 +78,7 @@ const getCreditos = async (req = request, res = response) => {
 
     status = JSON.parse(status);
 
-    const creditos = await CreditoModel.find({ ruta: idRuta, status })
+    const creditos = await Credito.find({ ruta: idRuta, status })
       .populate({
         path: "cliente",
         select: "nombre alias"
@@ -108,7 +108,7 @@ const getCreditoById = async (req = request, res = response) => {
 
     const { idCredito } = req.params;
 
-    const credito = await CreditoModel.findById(idCredito)
+    const credito = await Credito.findById(idCredito)
       .populate('cliente', ['nombre', 'alias', 'direccion', 'ciudad', 'telefono'])
       .populate('pagos', ['fecha', 'valor'])
 
@@ -141,7 +141,7 @@ const actualizarCredito = async (req = request, res = response) => {
       valor_credito } = req.body;
 
     const [credito] = await Promise.all([
-      CreditoModel.findById(idCredito),
+      Credito.findById(idCredito),
     ]);
 
     if (valor_credito) {
@@ -201,12 +201,12 @@ const actualizarTurno = async (req = request, res = response) => {
     if (!query) {
       // validamos si ese turno ya existe
       const [validarTurno, credito] = await Promise.all([
-        CreditoModel.find({
+        Credito.find({
           ruta,
           turno
         })
           .populate('cliente', 'alias'),
-        CreditoModel.findById(idCredito)
+        Credito.findById(idCredito)
       ])
 
       if (validarTurno.length > 0) {
@@ -222,7 +222,7 @@ const actualizarTurno = async (req = request, res = response) => {
       return res.status(200).json(true)
     }
 
-    await CreditoModel.findByIdAndUpdate(idCredito, {turno: 0});
+    await Credito.findByIdAndUpdate(idCredito, {turno: 0});
     return res.status(200).json(true);
 
   } catch (error) {
@@ -239,13 +239,13 @@ const eliminarCredito = async (req = request, res = response) => {
     const { idCredito } = req.params;
 
     const [credito] = await Promise.all([
-      CreditoModel.findById(idCredito)
+      Credito.findById(idCredito)
     ])
 
     // actualizar estado del cliente
-    await ClienteModel.findByIdAndUpdate(credito.cliente, { status: false })
+    await Cliente.findByIdAndUpdate(credito.cliente, { status: false })
 
-    await CreditoModel.findByIdAndDelete(idCredito);
+    await Credito.findByIdAndDelete(idCredito);
 
     await actualizarCaja(credito.ruta, credito.fecha_inicio);
     await actualizarRuta(credito.ruta);
@@ -264,7 +264,7 @@ const eliminarCredito = async (req = request, res = response) => {
 const getCreditoByDate = async (req = request, res = response) => {
   try {
     let { fecha, ruta } = req.query;
-    const creditos = await CreditoModel.find({
+    const creditos = await Credito.find({
       $or: [{ fecha_inicio: fecha }],
       $and: [{ ruta }]
     })

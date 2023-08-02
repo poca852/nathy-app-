@@ -1,6 +1,6 @@
 const { request, response } = require('express');
 const { ObjectId } = require('mongoose').Types;
-const { CreditoModel, UsuarioModel, ClienteModel, PagoModel } = require('../models')
+const { Credito, Cliente, Pago } = require('../models')
 const moment = require('moment');
 moment.tz.setDefault('America/Guatemala');
 
@@ -17,14 +17,14 @@ const buscarClientes = async (termino = '', res = response) => {
   const esMongoId = ObjectId.isValid(termino);
 
   if (esMongoId) {
-    const cliente = await ClienteModel.findById(termino);
+    const cliente = await Cliente.findById(termino);
     return res.status(200).json({
       results: (cliente) ? [cliente] : []
     })
   }
 
   const regex = new RegExp(termino, 'i');
-  const clientes = await ClienteModel.find({
+  const clientes = await Cliente.find({
     $or: [{ nombre: regex }, { alias: regex }],
     $and: [{ status: true }]
   });
@@ -37,7 +37,7 @@ const buscarClientes = async (termino = '', res = response) => {
 const buscarCreditosByName = async (termino = '', res = response, req = request) => {
   const { ruta } = req.usuario;
 
-  let allCreditos = await CreditoModel.find({ ruta, status: true })
+  let allCreditos = await Credito.find({ ruta, status: true })
     .populate({
       path: "cliente",
       select: "nombre alias"
@@ -66,7 +66,7 @@ const buscarClienteEnPagos = async (termino = '', res = response) => {
 
   const hoy = moment().format('DD/MM/YYYY')
 
-  const allPagos = await PagoModel.find({ ruta, fecha: new RegExp(hoy, 'i') })
+  const allPagos = await Pago.find({ ruta, fecha: new RegExp(hoy, 'i') })
     .populate('cliente')
 
   const pagos = allPagos.filter(p => p.cliente.alias.includes(termino.toUpperCase()))

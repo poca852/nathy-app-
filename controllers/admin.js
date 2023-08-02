@@ -1,5 +1,5 @@
 const { request, response } = require('express')
-const { UsuarioModel } = require('../models')
+const { User } = require('../models')
 
 const getAllEmpleados = async (req = request, res = response) => {
   try {
@@ -9,7 +9,7 @@ const getAllEmpleados = async (req = request, res = response) => {
     let empleados = [];
 
     for (const ruta of rutas) {
-      let consulta = await UsuarioModel.find({ ruta: ruta._id })
+      let consulta = await User.find({ ruta: ruta._id })
         .populate('ruta', ['nombre'])
         .populate('rol', ['rol'])
 
@@ -45,7 +45,7 @@ const deleteEmpleado = async (req = request, res = response) => {
   try {
     const { idEmpleado: user } = req.params;
 
-    await UsuarioModel.findByIdAndDelete(user);
+    await User.findByIdAndDelete(user);
 
     res.json({
       ok: true

@@ -1,27 +1,27 @@
-const UsuarioModel = require('./UsuarioMode');
-const RutaModel = require('./RutaModel');
-const ClienteModel = require('./ClienteModel');
-const CreditoModel = require('./CreditoModel');
-const CajaModel = require('./CajaModel');
-const PagoModel = require('./PagoModel');
-const InversionModel = require('./InversionModel');
-const RetiroModel = require('./RetiroModel');
-const GastoModel = require('./GastoModel');
-const RolModel = require('./rol');
-const Gasto = require('./gasto');
-const EmpresaModel = require('./EmpresaModel');
+const User = require('./UsuarioMode');
+const Ruta = require('./RutaModel');
+const Cliente = require('./ClienteModel');
+const Credito = require('./CreditoModel');
+const Caja = require('./CajaModel');
+const Pago = require('./PagoModel');
+const Inversion = require('./InversionModel');
+const Retiro = require('./RetiroModel');
+const Gasto = require('./GastoModel');
+const Rol = require('./rol');
+const ListGasto = require('./gasto');
+const Empresa = require('./EmpresaModel');
 
 module.exports = {
-  UsuarioModel,
-  RutaModel,
-  ClienteModel,
-  CreditoModel,
-  CajaModel,
-  PagoModel,
-  InversionModel,
-  RetiroModel,
-  GastoModel,
-  RolModel,
+  User,
+  Ruta,
+  Cliente,
+  Credito,
+  Caja,
+  Pago,
+  Inversion,
+  Retiro,
   Gasto,
-  EmpresaModel
+  Rol,
+  ListGasto,
+  Empresa
 }

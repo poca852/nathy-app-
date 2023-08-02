@@ -1,5 +1,5 @@
 const { request, response } = require("express");
-const { ClienteModel, RutaModel } = require('../models');
+const { Cliente, Ruta } = require('../models');
 
 const getClientes = async (req = request, res = response) => {
 
@@ -9,7 +9,7 @@ const getClientes = async (req = request, res = response) => {
 
     status = JSON.parse(status);
 
-    const clientes = await ClienteModel.find({ruta: idRuta, status})
+    const clientes = await Cliente.find({ruta: idRuta, status})
       .populate('creditos')
 
     return res.status(200).json({
@@ -31,7 +31,7 @@ const getClienteById = async (req = request, res = response) => {
 
     const { idCliente } = req.params;
 
-    const cliente = await ClienteModel.findById(idCliente)
+    const cliente = await Cliente.findById(idCliente)
       .populate({
         path: 'creditos',
         populate: {path: 'pagos'}
@@ -58,7 +58,7 @@ const addCliente = async (req = request, res = response) => {
     const { ruta } = req.usuario;
 
     // verifico que el dpi ya existe en dicha ruta
-    const verificarSiExisteClienteEnRuta = await ClienteModel.findOne({ ruta, dpi: body.dpi });
+    const verificarSiExisteClienteEnRuta = await Cliente.findOne({ ruta, dpi: body.dpi });
     if (verificarSiExisteClienteEnRuta) {
       return res.status(400).json({
         ok: false,
@@ -67,13 +67,13 @@ const addCliente = async (req = request, res = response) => {
     };
 
     const [nuevoCliente, rutaModel] = await Promise.all([
-      ClienteModel.create({...body, ruta}),
-      RutaModel.findById(ruta)
+      Cliente.create({...body, ruta}),
+      Ruta.findById(ruta)
     ])
 
     // actualizamos el numero de clientes de la ruta
     rutaModel.clientes += 1;
-    await rutaModel.save();
+    await Ruta.save();
 
     return res.status(201).json({
       ok: true,
@@ -95,7 +95,7 @@ const actualizarCliente = async (req = request, res = response) => {
   try {
     const { idCliente } = req.params;
     const { _id, idRuta, ...resto } = req.body;
-    const cliente = await ClienteModel.findByIdAndUpdate(idCliente, resto, { new: true });
+    const cliente = await Cliente.findByIdAndUpdate(idCliente, resto, { new: true });
 
     return res.status(201).json(cliente)
 
@@ -115,8 +115,8 @@ const eliminarCliente = async (req = request, res = response) => {
     const { idRuta } = req.body;
 
     const [ruta, cliente] = await Promise.all([
-      RutaModel.findById(idRuta),
-      ClienteModel.findById(idCliente)
+      Ruta.findById(idRuta),
+      Cliente.findById(idCliente)
     ])
 
     if(cliente.status){
@@ -127,7 +127,7 @@ const eliminarCliente = async (req = request, res = response) => {
     }
 
     ruta.clientes -= 1;
-    await ClienteModel.findByIdAndDelete(idCliente);
+    await Cliente.findByIdAndDelete(idCliente);
     await ruta.save();
 
     return res.status(201).json({
